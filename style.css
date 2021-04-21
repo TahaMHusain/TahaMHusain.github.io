@@ -1,155 +1,118 @@
 /* A Free Design by Bryant Smith (bryantsmith.com) */
 
 html, body {
-text-align: center;
 }
-p {text-align: left;}
+
+p {
+}
 
 body {
 	margin: 0;
 	padding: 0;
-	background: #697281;
 	font-family:  Arial, Helvetica, sans-serif;
 	font-size: 13px;
 	color: #F1F5F8;
-  background: #26476E url(background.png) repeat-x;
+    background: #04042f
 }
-*
+
+#siteWrapper
 {
-  margin: 0 auto 0 auto;
- text-align:left;}
+font - family: "proxima-nova",
+"Helvetica Neue",
+Helvetica,
+Arial,
+sans - serif;
+font - size: 16px;
+font - family: adobe - garamond - pro;
+font - weight: 400;
+font - style: normal;
+font - size: 20px;
+letter - spacing: 0px;
+line - height: 1.6em;
+color:  #fff
+}
 
 #page
 {
   margin: 0 auto 0 auto; 
   display: block; 
-  height:auto;
   position: relative; 
-  overflow: hidden; 
-  width: 753px;
+  overflow: hidden;
+  color: #fff
 }
 
 #header
 {
-margin-top:25px;
-padding-top:63px;
-padding-left:30px;
-padding-right:30px;
-background-image:url(header.png);
-background-repeat:no-repeat;
-height:122px;
-width:753px;
-overflow:hidden;
+height:10%;
+width:100%;
+position: absolute;
+display: table;
+white-space: nowrap;
+background-color: #fff;
+color: #04042f
 }
 
-#header h1, #header h2
+#headerTitle
 {
-margin-left:0px;
-width:693px;
+display: table-cell;
+vertical-align: middle;
+position:static;
+color:#04042f;
+}
+
+#headerTitle h1
+{
+margin-left:20px;
 position:relative;
-color:#000000;
 text-align:center;
-font-size:15px;
+font-size:40px;
 font-weight:bold;
-font-family:Arial, Helvetica, sans-serif;
-clear:both;
 }
 
-#header h1
+#headerOther
 {
-margin-left:0px;
-width:693px;
-position:relative;
-color:#26476E;
-font-size:30px;
+position: static;
+box-sizing:border-box;
+display:table-cell;
+vertical-align:middle;
 }
 
-
-
-#bar
+#headerNav
 {
-background-image:url(bar.png);
-background-repeat:no-repeat;
-height:53px;
-width:750px;
-padding-bottom:15px;
+position: relative;
+margin-right:20px;
+text-align: right;
+box-sizing:content-box;
+vertical-align:middle;
+color: #04042f
+}
+
+#navLinks
+{
+font-size: 20px;
+margin-left:30px;
+letter-spacing: 1px;
+line-height: 1em;
+text-align: center;
+display: inline-block;
+vertical-align: middle;
 text-align:center;
-margin:0 auto 0 auto;
 }
 
-#bar ul {
-	margin: 0px auto 0px auto;
-	padding: 0px;
-	list-style-type: none;
-	height: 74px;
-	text-align:center;
-}
-#bar ul li , #bar ul li a, #bar ul li a:visited{
-	margin: 0px;
-	padding: 0px;
-	height: 30px;
-	overflow: hidden;
-	display: inline;
-	text-align:center;
-	line-height:65px;
-	color:#26476E;
-	padding-left:6px;
-	padding-right:6px;
-}
-
-#bar ul li a:hover
+#navLinks a
 {
-color:#000000;
-text-decoration:underline;
-
+text-decoration: none;
+color: #04042f	
 }
 
-
-
-
-
-
-
-
-
-.contentTitle
+#navLinks a:hover
 {
-width:700px;
-height:44px;
-margin-top:20px;
-margin-left:0px;
-margin-right:25px;
-background-image:url(tab_back.png);
-background-repeat:no-repeat;
-
-}
-
-.contentTitle h1
-{
-margin-left:21px;
-padding-top:8px;
-font-size:21px;
-font-weight:bold;
-letter-spacing:-1px;
-color:#FFFFFF;
+border-bottom:2px dotted #04042f;
 }
 
 
-.contentText
-{
-width:680px;
-padding-left:30px;
-padding-right:30px;
-font-size:13px;
-color:#FFFFFF;
-line-height:30px;
-}
 
-a
-{
-text-decoration:none;
-color:#F1F3F8;
-}
+
 
 a:hover
 {
@@ -158,19 +121,12 @@ border-bottom:1px dotted #F1F3F8;
 
 
 #footer {
-width: 750px;
-height:20px;
+width: 100%;
+height: 10%;
+vertical-align: bottom;
+
 text-align:center;
 font-size:9px;
 color:#223F8D;
 padding-top:20px;
-}
-
-html, body {
-text-align: center;
-}
-p {
-margin:7px;
-text-align: left;
-text-align:justify;
 }
