@@ -12,7 +12,16 @@ body {
 	font-family:  Arial, Helvetica, sans-serif;
 	font-size: 13px;
 	color: #F1F5F8;
-    background: #04042f
+    background: #0c0c80
+}
+
+box { /*any of the box layouts & white backgrounds*/
+	background:white;
+	border-style:solid;
+	border-width:1.5px;
+	border-color:#071419;
+	border-radius: 12px;
+	-moz-border-radius: 12px;
 }
 
 #siteWrapper
@@ -32,24 +41,32 @@ line - height: 1.6em;
 color:  #fff
 }
 
+#container
+{
+  width:780px;
+  margin: 5px  auto;
+  padding: 10px 0;
+  text-color: #fff;
+}
+
 #page
 {
   margin: 0 auto 0 auto; 
   display: block; 
   position: relative; 
   overflow: hidden;
-  color: #fff
+  color: #000
 }
 
 #header
 {
-height:10%;
+height:11%;
 width:100%;
 position: absolute;
 display: table;
 white-space: nowrap;
 background-color: #fff;
-color: #04042f
+color: #000066
 }
 
 #headerTitle
@@ -57,7 +74,7 @@ color: #04042f
 display: table-cell;
 vertical-align: middle;
 position:static;
-color:#04042f;
+color:#000066;
 }
 
 #headerTitle h1
@@ -80,11 +97,11 @@ vertical-align:middle;
 #headerNav
 {
 position: relative;
-margin-right:20px;
+margin-right:60px;
 text-align: right;
 box-sizing:content-box;
 vertical-align:middle;
-color: #04042f
+color: #000066
 }
 
 #navLinks
@@ -102,12 +119,12 @@ text-align:center;
 #navLinks a
 {
 text-decoration: none;
-color: #04042f	
+color: #000066	
 }
 
 #navLinks a:hover
 {
-border-bottom:2px dotted #04042f;
+border-bottom:2px dotted #000066;
 }
 
 
