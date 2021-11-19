@@ -22,6 +22,7 @@ box { /*any of the box layouts & white backgrounds*/
 	border-color:#071419;
 	border-radius: 12px;
 	-moz-border-radius: 12px;
+    background: #c89696
 }
 
 #siteWrapper
