@@ -24,18 +24,18 @@ body {
 
 #siteWrapper
 {
-font - family: "proxima-nova",
+font-family: "proxima-nova",
 "Helvetica Neue",
 Helvetica,
 Arial,
-sans - serif;
-font - size: 16px;
-font - family: adobe - garamond - pro;
-font - weight: 400;
-font - style: normal;
-font - size: 20px;
-letter - spacing: 0px;
-line - height: 1.6em;
+sans-serif;
+font-size: 16px;
+font-family: adobe - garamond - pro;
+font-weight: 400;
+font-style: normal;
+font-size: 20px;
+letter-spacing: 0px;
+line-height: 1.6em;
 color:  #fff;
 }
 
