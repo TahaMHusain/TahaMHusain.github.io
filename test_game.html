@@ -10,10 +10,8 @@
 
 <body>
 
-    <script>
+    <script type="module">
         import {joinRoom} from './trystero-torrent.min.js';
-
-        console.log("Running script!");
 
         const appId = Date.now() + 7;
         const config = {appId: 'test_room_1'};
@@ -21,6 +19,10 @@
 
         room.onPeerJoin(peerId => console.log(`${peerId} joined`))
         room.onPeerLeave(peerId => console.log(`${peerId} left`))
+    </script>
+
+    <script>
+        console.log("Running script!");
     </script>
 
 </body>
