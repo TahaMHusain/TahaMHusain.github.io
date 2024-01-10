@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width", initial-scale="1.0">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
+<link rel="stylesheet" type="text/css" href="style.css" >
+
+<title>Test Game</title>
+</head>
+
+<body>
+
+    <script type="module">
+        import {joinRoom} from './trystero-torrent.min.js'
+
+        const appId = Date.now() + 7;
+        const config = {appId: 'test_room_1'};
+        const room = joinRoom(config, 'yoyodyne');
+
+        room.onPeerJoin(peerId => console.log(`${peerId} joined`))
+        room.onPeerLeave(peerId => console.log(`${peerId} left`))
+    </script>
+
+</body>
