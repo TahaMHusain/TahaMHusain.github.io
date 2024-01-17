@@ -41,9 +41,6 @@ function handleCellPlayed(clickedCell, clickedCellIndex) {
 function handleCellPlayedPeer(clickedCellIndex) {
     let clickedCell = document.querySelector('[data-cell-index="' + clickedCellIndex + '"]')
     handleCellPlayed(clickedCell, clickedCellIndex);
-    console.log("Before change:" + a[0].innerHTML);
-    a[0].innerHTML = currentPlayer;
-    console.log("After change:" + a[0].innerHTML);
 }
 
 function handlePlayerChange() {
@@ -94,7 +91,6 @@ function handleCellClick(clickedCellEvent) {
     handleCellPlayed(clickedCell, clickedCellIndex);
     handleResultValidation();
     if (numPlayers > 1) {
-        console.log("Room found!");
         sendCellPlayed(clickedCellIndex);
         sendResultValidation({dummy: "dummy"});
     }
@@ -112,7 +108,6 @@ function handleRestartGame() {
 function handleRestartClick() {
     handleRestartGame();
     if (numPlayers > 1) {
-        console.log("Room found!");
         sendRestartGame({dummy: "dummy"});
     }
 }
