@@ -1,12 +1,3 @@
-import {joinRoom} from './trystero-torrent.min.js';
-
-const appId = Date.now() + 7;
-const config = {appId: 'test_room_1'};
-const room = joinRoom(config, 'yoyodyne');
-
-room.onPeerJoin(peerId => console.log(`${peerId} joined`))
-room.onPeerLeave(peerId => console.log(`${peerId} left`))
-
 const statusDisplay = document.querySelector('.game--status');
 
 let gameActive = true;
