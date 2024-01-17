@@ -1,4 +1,4 @@
-import {joinRoom} from './trystero-torrent.min.js';
+import {joinRoom, selfId} from './trystero-torrent.min.js';
 
 let gameActive = true;
 let currentPlayer = "X";
@@ -14,8 +14,7 @@ const statusDisplay = document.querySelector('.game--status');
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
 const currentPlayerTurn = () => `It's ${currentPlayer}'s turn`;
-const appId = Date.now() + 7;
-const config = {appId: 'test_room_1'};
+const config = {appId: 'taha-tictactoetest'};
 
 startup();
 
@@ -74,7 +73,7 @@ function handleResultValidation() {
 
     handlePlayerChange();
     if (room) {
-        sendPlayerChange();
+        sendPlayerChange({dummy: "dummy"});
     }
 }
 
@@ -103,7 +102,7 @@ function handleRestartGame() {
 function handleRestartClick() {
     handleRestartGame();
     if (room) {
-        sendRestartGame();
+        sendRestartGame({dummy: "dummy"});
     }
 }
 
