@@ -9,7 +9,7 @@ let sendResultValidation;
 let sendCellPlayed;
 let sendRestartGame;
 
-let numPlayers = 0;
+let numPlayers = 1;
 
 const statusDisplay = document.querySelector('.game--status');
 
@@ -89,7 +89,7 @@ function handleCellClick(clickedCellEvent) {
 
     handleCellPlayed(clickedCell, clickedCellIndex);
     handleResultValidation();
-    if (numPlayers > 0) {
+    if (numPlayers > 1) {
         console.log("Room found!");
         sendCellPlayed([clickedCell, clickedCellIndex]);
         sendResultValidation();
@@ -107,7 +107,7 @@ function handleRestartGame() {
 
 function handleRestartClick() {
     handleRestartGame();
-    if (numPlayers > 0) {
+    if (numPlayers > 1) {
         console.log("Room found!");
         sendRestartGame();
     }
