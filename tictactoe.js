@@ -40,6 +40,7 @@ function handleCellPlayed(clickedCell, clickedCellIndex) {
 
 function handleCellPlayedPeer(a) {
     handleCellPlayed(a[0], a[1]);
+    a[0].innerHTML = currentPlayer;
 }
 
 function handlePlayerChange() {
@@ -81,7 +82,7 @@ function handleResultValidation() {
 }
 
 function handleCellClick(clickedCellEvent) {
-    let clickedCell = clickedCellEvent.target;
+    const clickedCell = clickedCellEvent.target;
     const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
 
     if(gameState[clickedCellIndex] !== "" || !gameActive)
