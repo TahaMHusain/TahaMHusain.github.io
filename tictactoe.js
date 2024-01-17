@@ -14,6 +14,8 @@ const statusDisplay = document.querySelector('.game--status');
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
 const currentPlayerTurn = () => `It's ${currentPlayer}'s turn`;
+const appId = Date.now() + 7;
+const config = {appId: 'test_room_1'};
 
 startup();
 
@@ -115,9 +117,7 @@ function startup() {
     let getPlayerChange;
     let getRestartGame;
     
-    const appId = Date.now() + 7;
-    const config = {appId: 'test_room_1'};
-    const room = joinRoom(config, 'yoyodyne');
+    room = joinRoom(config, 'yoyodyne');
 
     room.onPeerJoin(peerId => console.log(`${peerId} joined`));
     room.onPeerLeave(peerId => console.log(`${peerId} left`));
@@ -126,8 +126,8 @@ function startup() {
     [sendPlayerChange, getPlayerChange] = room.makeAction('playerChange');
     [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
 
-    getCellPlayed(handleCellPlayed)
-    getPlayerChange(handlePlayerChange)
-    getRestartGame(handleRestartGame)
+    getCellPlayed(handleCellPlayed);
+    getPlayerChange(handlePlayerChange);
+    getRestartGame(handleRestartGame);
 
 }
