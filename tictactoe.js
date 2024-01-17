@@ -89,7 +89,7 @@ function handleCellClick(clickedCellEvent) {
     handleCellPlayed(clickedCell, clickedCellIndex);
     if (numPlayers > 1) {
         console.log("Room found!");
-        sendCellPlayed(clickedCell, clickedCellIndex);
+        sendCellPlayed({dummy: "dummy"}, clickedCell, clickedCellIndex);
     }
     handleResultValidation();
 }
@@ -116,7 +116,6 @@ document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click'
 document.querySelector('.game--restart').addEventListener('click', handleRestartClick);
 
 function startup() {
-    console.log("Meaningless change");
     let getCellPlayed;
     let getPlayerChange;
     let getRestartGame;
