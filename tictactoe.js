@@ -116,6 +116,7 @@ document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click'
 document.querySelector('.game--restart').addEventListener('click', handleRestartClick);
 
 function startup() {
+    console.log("Meaningless change");
     let getCellPlayed;
     let getPlayerChange;
     let getRestartGame;
