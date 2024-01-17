@@ -87,7 +87,7 @@ function handleCellClick(clickedCellEvent) {
     handleResultValidation();
     if (numPlayers > 0) {
         console.log("Room found!");
-        sendCellPlayed({dummy: "dummy"}, clickedCell, clickedCellIndex);
+        sendCellPlayed(clickedCell, clickedCellIndex);
         sendResultValidation({dummy: "dummy"});
     }
     
