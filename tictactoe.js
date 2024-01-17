@@ -1,7 +1,5 @@
 import {joinRoom} from './trystero-torrent.min.js';
 
-const statusDisplay = document.querySelector('.game--status');
-
 let gameActive = true;
 let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
@@ -10,6 +8,8 @@ let room;
 let sendPlayerChange;
 let sendCellPlayed;
 let sendRestartGame;
+
+const statusDisplay = document.querySelector('.game--status');
 
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
