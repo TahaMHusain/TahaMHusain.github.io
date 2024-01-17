@@ -6,13 +6,16 @@ let gameActive = true;
 let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
+let room;
+let sendPlayerChange;
+let sendCellPlayed;
+let sendRestartGame;
+
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
 const currentPlayerTurn = () => `It's ${currentPlayer}'s turn`;
 
-const [sendCellPlayed, getCellPlayed] = room.makeAction('cellPlayed');
-const [sendPlayerChange, getPlayerChange] = room.makeAction('playerChange');
-const [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
+
 
 statusDisplay.innerHTML = currentPlayerTurn();
 
@@ -30,13 +33,11 @@ const winningConditions = [
 function handleCellPlayed(clickedCell, clickedCellIndex) {
     gameState[clickedCellIndex] = currentPlayer;
     clickedCell.innerHTML = currentPlayer;
-    sendCellPlayed(clickedCell, clickedCellIndex);
 }
 
 function handlePlayerChange() {
     currentPlayer = currentPlayer === "X" ? "O" : "X";
     statusDisplay.innerHTML = currentPlayerTurn();
-    sendPlayerChange();
 }
 
 
@@ -70,6 +71,9 @@ function handleResultValidation() {
     }
 
     handlePlayerChange();
+    if (room) {
+        sendPlayerChange();
+    }
 }
 
 function handleCellClick(clickedCellEvent) {
@@ -80,6 +84,9 @@ function handleCellClick(clickedCellEvent) {
         return;
 
     handleCellPlayed(clickedCell, clickedCellIndex);
+    if (room) {
+        sendCellPlayed(clickedCell, clickedCellIndex);
+    }
     handleResultValidation();
 }
 
@@ -92,33 +99,53 @@ function handleRestartGame() {
     sendRestartGame();
 }
 
+function handleRestartClick() {
+    handleRestartGame();
+    if (room) {
+        sendRestartGame();
+    }
+}
+
 
 
 document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
-document.querySelector('.game--restart').addEventListener('click', handleRestartGame);
+document.querySelector('.game--restart').addEventListener('click', handleRestartClick);
 
 function startup() {
-        const appId = Date.now() + 7;
-        const config = {appId: 'test_room_1'};
-        const room = joinRoom(config, 'yoyodyne');
+    let getCellPlayed;
+    let getPlayerChange;
+    let getRestartGame;
+    
+    const appId = Date.now() + 7;
+    const config = {appId: 'test_room_1'};
+    const room = joinRoom(config, 'yoyodyne');
 
-        room.onPeerJoin(peerId => console.log(`${peerId} joined`));
-        room.onPeerLeave(peerId => console.log(`${peerId} left`));
+    room.onPeerJoin(peerId => console.log(`${peerId} joined`));
+    room.onPeerLeave(peerId => console.log(`${peerId} left`));
+
+    [sendCellPlayed, getCellPlayed] = room.makeAction('cellPlayed');
+    [sendPlayerChange, getPlayerChange] = room.makeAction('playerChange');
+    [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
+
+    getCellPlayed(handleCellPlayed)
+    getPlayerChange(handlePlayerChange)
+    getRestartGame(handleRestartGame)
+
 }
 
 window.onload = startup;
 
-getCellPlayed((clickedCell, clickedCellIndex) => {
+getCellPlayed((clickedCell, clickedCellIndex, peerID) => {
     gameState[clickedCellIndex] = currentPlayer;
     clickedCell.innerHTML = currentPlayer;
 })
 
-getPlayerChange(() => {
+getPlayerChange((peerID) => {
     currentPlayer = currentPlayer === "X" ? "O" : "X";
     statusDisplay.innerHTML = currentPlayerTurn();
 })
 
-getRestartGame(() => {
+getRestartGame((peerID) => {
     gameActive = true;
     currentPlayer = "X";
     gameState = ["", "", "", "", "", "", "", "", ""];
