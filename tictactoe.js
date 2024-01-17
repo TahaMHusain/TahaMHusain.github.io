@@ -40,7 +40,9 @@ function handleCellPlayed(clickedCell, clickedCellIndex) {
 
 function handleCellPlayedPeer(a) {
     handleCellPlayed(a[0], a[1]);
+    console.log("Before change:" + a[0].innerHTML);
     a[0].innerHTML = currentPlayer;
+    console.log("After change:" + a[0].innerHTML);
 }
 
 function handlePlayerChange() {
