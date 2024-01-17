@@ -91,11 +91,6 @@ function handleCellClick(clickedCellEvent) {
     handleResultValidation();
     if (numPlayers > 0) {
         console.log("Room found!");
-        getPeers().forEach(function(value, key) {
-            sendCellPlayed(clickedCell, )
-        })
-
-
         sendCellPlayed([clickedCell, clickedCellIndex]);
         sendResultValidation();
     }
