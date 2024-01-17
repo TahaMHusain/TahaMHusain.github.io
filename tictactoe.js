@@ -5,7 +5,7 @@ let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
 let room;
-let sendPlayerChange;
+let sendResultValidation;
 let sendCellPlayed;
 let sendRestartGame;
 
@@ -74,9 +74,6 @@ function handleResultValidation() {
     }
 
     handlePlayerChange();
-    if (room) {
-        sendPlayerChange({dummy: "dummy"});
-    }
 }
 
 function handleCellClick(clickedCellEvent) {
@@ -87,11 +84,13 @@ function handleCellClick(clickedCellEvent) {
         return;
 
     handleCellPlayed(clickedCell, clickedCellIndex);
-    if (numPlayers > 1) {
+    handleResultValidation();
+    if (numPlayers > 0) {
         console.log("Room found!");
         sendCellPlayed({dummy: "dummy"}, clickedCell, clickedCellIndex);
+        sendResultValidation({dummy: "dummy"});
     }
-    handleResultValidation();
+    
 }
 
 function handleRestartGame() {
@@ -132,11 +131,11 @@ function startup() {
     });
 
     [sendCellPlayed, getCellPlayed] = room.makeAction('cellPlayed');
-    [sendPlayerChange, getPlayerChange] = room.makeAction('playerChange');
+    [sendResultValidation, getResultValidation] = room.makeAction('resultValidation');
     [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
 
     getCellPlayed(handleCellPlayed);
-    getPlayerChange(handlePlayerChange);
+    getResultValidation(handleResultValidation);
     getRestartGame(handleRestartGame);
 
 }
