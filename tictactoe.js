@@ -33,21 +33,13 @@ function handleCellPlayed(clickedCell, clickedCellIndex) {
     sendCellPlayed(clickedCell, clickedCellIndex);
 }
 
-getCellPlayed((clickedCell, clickedCellIndex) => {
-    gameState[clickedCellIndex] = currentPlayer;
-    clickedCell.innerHTML = currentPlayer;
-})
-
 function handlePlayerChange() {
     currentPlayer = currentPlayer === "X" ? "O" : "X";
     statusDisplay.innerHTML = currentPlayerTurn();
     sendPlayerChange();
 }
 
-getPlayerChange(() => {
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    statusDisplay.innerHTML = currentPlayerTurn();
-})
+
 
 function handleResultValidation() {
     let roundWon = false;
@@ -100,13 +92,7 @@ function handleRestartGame() {
     sendRestartGame();
 }
 
-getRestartGame(() => {
-    gameActive = true;
-    currentPlayer = "X";
-    gameState = ["", "", "", "", "", "", "", "", ""];
-    statusDisplay.innerHTML = currentPlayerTurn();
-    document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
-})
+
 
 document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
 document.querySelector('.game--restart').addEventListener('click', handleRestartGame);
@@ -121,3 +107,21 @@ function startup() {
 }
 
 window.onload = startup;
+
+getCellPlayed((clickedCell, clickedCellIndex) => {
+    gameState[clickedCellIndex] = currentPlayer;
+    clickedCell.innerHTML = currentPlayer;
+})
+
+getPlayerChange(() => {
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusDisplay.innerHTML = currentPlayerTurn();
+})
+
+getRestartGame(() => {
+    gameActive = true;
+    currentPlayer = "X";
+    gameState = ["", "", "", "", "", "", "", "", ""];
+    statusDisplay.innerHTML = currentPlayerTurn();
+    document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
+})
