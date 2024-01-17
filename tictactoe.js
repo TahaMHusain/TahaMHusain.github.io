@@ -86,6 +86,7 @@ function handleCellClick(clickedCellEvent) {
 
     handleCellPlayed(clickedCell, clickedCellIndex);
     if (room) {
+        console.log("Room found!");
         sendCellPlayed(clickedCell, clickedCellIndex);
     }
     handleResultValidation();
@@ -102,6 +103,7 @@ function handleRestartGame() {
 function handleRestartClick() {
     handleRestartGame();
     if (room) {
+        console.log("Room found!");
         sendRestartGame({dummy: "dummy"});
     }
 }
