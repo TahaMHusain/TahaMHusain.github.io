@@ -116,7 +116,7 @@ document.querySelector('.game--restart').addEventListener('click', handleRestart
 
 function startup() {
     let getCellPlayed;
-    let getPlayerChange;
+    let getResultValidation;
     let getRestartGame;
     
     room = joinRoom(config, 'yoyodyne');
