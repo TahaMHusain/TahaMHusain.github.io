@@ -134,21 +134,3 @@ function startup() {
 }
 
 window.onload = startup;
-
-getCellPlayed((clickedCell, clickedCellIndex, peerID) => {
-    gameState[clickedCellIndex] = currentPlayer;
-    clickedCell.innerHTML = currentPlayer;
-})
-
-getPlayerChange((peerID) => {
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    statusDisplay.innerHTML = currentPlayerTurn();
-})
-
-getRestartGame((peerID) => {
-    gameActive = true;
-    currentPlayer = "X";
-    gameState = ["", "", "", "", "", "", "", "", ""];
-    statusDisplay.innerHTML = currentPlayerTurn();
-    document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
-})
