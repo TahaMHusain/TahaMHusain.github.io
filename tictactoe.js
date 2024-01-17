@@ -96,7 +96,6 @@ function handleRestartGame() {
     gameState = ["", "", "", "", "", "", "", "", ""];
     statusDisplay.innerHTML = currentPlayerTurn();
     document.querySelectorAll('.cell').forEach(cell => cell.innerHTML = "");
-    sendRestartGame();
 }
 
 function handleRestartClick() {
