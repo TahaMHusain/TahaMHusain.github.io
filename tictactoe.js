@@ -38,8 +38,9 @@ function handleCellPlayed(clickedCell, clickedCellIndex) {
     clickedCell.innerHTML = currentPlayer;
 }
 
-function handleCellPlayedPeer(a) {
-    handleCellPlayed(a[0], a[1]);
+function handleCellPlayedPeer(clickedCellIndex) {
+    let clickedCell = document.querySelector('[data-cell-index="' + clickedCellIndex + '"]')
+    handleCellPlayed(clickedCell, clickedCellIndex);
     console.log("Before change:" + a[0].innerHTML);
     a[0].innerHTML = currentPlayer;
     console.log("After change:" + a[0].innerHTML);
@@ -94,7 +95,7 @@ function handleCellClick(clickedCellEvent) {
     handleResultValidation();
     if (numPlayers > 1) {
         console.log("Room found!");
-        sendCellPlayed([clickedCell, clickedCellIndex]);
+        sendCellPlayed(clickedCellIndex);
         sendResultValidation({dummy: "dummy"});
     }
     
