@@ -1,4 +1,4 @@
-import {joinRoom, selfId} from './trystero-torrent.min.js';
+import {joinRoom} from './trystero-torrent.min.js';
 
 let gameActive = true;
 let currentPlayer = "X";
@@ -36,6 +36,10 @@ const winningConditions = [
 function handleCellPlayed(clickedCell, clickedCellIndex) {
     gameState[clickedCellIndex] = currentPlayer;
     clickedCell.innerHTML = currentPlayer;
+}
+
+function handleCellPlayedPeer(a) {
+    handleCellPlayed(a[0], a[1])
 }
 
 function handlePlayerChange() {
@@ -87,8 +91,13 @@ function handleCellClick(clickedCellEvent) {
     handleResultValidation();
     if (numPlayers > 0) {
         console.log("Room found!");
-        sendCellPlayed(clickedCell, clickedCellIndex);
-        sendResultValidation({dummy: "dummy"});
+        getPeers().forEach(function(value, key) {
+            sendCellPlayed(clickedCell, )
+        })
+
+
+        sendCellPlayed([clickedCell, clickedCellIndex]);
+        sendResultValidation();
     }
     
 }
@@ -105,7 +114,7 @@ function handleRestartClick() {
     handleRestartGame();
     if (numPlayers > 0) {
         console.log("Room found!");
-        sendRestartGame({dummy: "dummy"});
+        sendRestartGame();
     }
 }
 
@@ -134,7 +143,7 @@ function startup() {
     [sendResultValidation, getResultValidation] = room.makeAction('resultV');
     [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
 
-    getCellPlayed(handleCellPlayed);
+    getCellPlayed(handleCellPlayedPeer);
     getResultValidation(handleResultValidation);
     getRestartGame(handleRestartGame);
 
