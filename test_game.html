@@ -39,16 +39,25 @@
         </div>
     </div>
     <br>
-    <div id="container" class="box">
-        <div id="page">
-            <h2> Blog </h2>
-            <p>
-                Test text
-            </P>
+    <section>
+        <h1 class="game--title">Tic-Tac-Toe</h1>
+        <div class="game--container">
+            <div data-cell-index="0" class="cell"></div>
+            <div data-cell-index="1" class="cell"></div>
+            <div data-cell-index="2" class="cell"></div>
+            <div data-cell-index="3" class="cell"></div>
+            <div data-cell-index="4" class="cell"></div>
+            <div data-cell-index="5" class="cell"></div>
+            <div data-cell-index="6" class="cell"></div>
+            <div data-cell-index="7" class="cell"></div>
+            <div data-cell-index="8" class="cell"></div>
         </div>
-    </div>
+        <h2 class="game--status"></h2>
+        <button class="game--restart">Restart Game</button>
+    </section>
+    <script src="tictactoe.js"></script>
 
-    <script type="module">
+    <!-- <script type="module">
         import {joinRoom} from './trystero-torrent.min.js';
 
         const appId = Date.now() + 7;
@@ -57,10 +66,6 @@
 
         room.onPeerJoin(peerId => console.log(`${peerId} joined`))
         room.onPeerLeave(peerId => console.log(`${peerId} left`))
-    </script>
-
-    <script>
-        console.log("Running script!");
-    </script>
+    </script> -->
 
 </body>
