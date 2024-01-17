@@ -131,7 +131,7 @@ function startup() {
     });
 
     [sendCellPlayed, getCellPlayed] = room.makeAction('cellPlayed');
-    [sendResultValidation, getResultValidation] = room.makeAction('resultValidation');
+    [sendResultValidation, getResultValidation] = room.makeAction('resultV');
     [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
 
     getCellPlayed(handleCellPlayed);
