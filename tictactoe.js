@@ -9,6 +9,8 @@ let sendPlayerChange;
 let sendCellPlayed;
 let sendRestartGame;
 
+let numPlayers = 0;
+
 const statusDisplay = document.querySelector('.game--status');
 
 const winningMessage = () => `Player ${currentPlayer} has won!`;
@@ -85,7 +87,7 @@ function handleCellClick(clickedCellEvent) {
         return;
 
     handleCellPlayed(clickedCell, clickedCellIndex);
-    if (room) {
+    if (numPlayers > 1) {
         console.log("Room found!");
         sendCellPlayed(clickedCell, clickedCellIndex);
     }
@@ -102,7 +104,7 @@ function handleRestartGame() {
 
 function handleRestartClick() {
     handleRestartGame();
-    if (room) {
+    if (numPlayers > 0) {
         console.log("Room found!");
         sendRestartGame({dummy: "dummy"});
     }
@@ -120,8 +122,14 @@ function startup() {
     
     room = joinRoom(config, 'yoyodyne');
 
-    room.onPeerJoin(peerId => console.log(`${peerId} joined`));
-    room.onPeerLeave(peerId => console.log(`${peerId} left`));
+    room.onPeerJoin(peerId => {
+        console.log(`${peerId} joined`);
+        numPlayers += 1;
+    });
+    room.onPeerLeave(peerId => {
+        console.log(`${peerId} left`);
+        numPlayers -= 1;
+    });
 
     [sendCellPlayed, getCellPlayed] = room.makeAction('cellPlayed');
     [sendPlayerChange, getPlayerChange] = room.makeAction('playerChange');
