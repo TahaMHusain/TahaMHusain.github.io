@@ -194,3 +194,15 @@ section {
   box-shadow: 2px 2px 2px 2px #d86c23;
   border: 2px solid #d86c23;
 }
+
+.content {
+  background-color: #f7e4ac;
+  width: fit-content;
+  box-sizing: content-box;
+  padding: 10px;
+  height: 50px;
+  font-size: 25px;
+  color: #5586e2;
+  box-shadow: 2px 2px 2px 2px #d86c23;
+  border: 2px solid #d86c23;
+}
