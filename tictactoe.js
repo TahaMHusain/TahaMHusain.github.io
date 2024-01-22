@@ -1,10 +1,13 @@
 import {joinRoom} from './trystero-torrent.min.js';
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 let gameActive = true;
 let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
 let room;
+let roomCode;
 let sendResultValidation;
 let sendCellPlayed;
 let sendRestartGame;
@@ -113,17 +116,9 @@ function handleRestartClick() {
     }
 }
 
-function checkRoom(roomCode) {
-    console.log("Attempting to join room " + roomCode + "...")
-    room = joinRoom(config, roomCode);
-    let peerList = room.getPeers();
-
-    if (peerList.size > MAX_PLAYERS - 1) {
-        console.log("Room "+ roomCode +" full! Exiting");
-        room.leave()
-        return false;
-    }
-
+async function checkRoom(roomCodeToTry) {
+    console.log("Attempting to join room " + roomCodeToTry + "...")
+    room = joinRoom(config, roomCodeToTry);
     room.onPeerJoin(peerId => {
         console.log(`${peerId} joined`);
         numPlayers += 1;
@@ -132,35 +127,56 @@ function checkRoom(roomCode) {
         console.log(`${peerId} left`);
         numPlayers -= 1;
     });
+
+    await delay(1000);
+
+    if (numPlayers > MAX_PLAYERS) {
+        console.log("Room "+ roomCodeToTry +" full! Exiting");
+        room.leave()
+        return false;
+    }
+
+    console.log("Joined room " + roomCodeToTry);
+
+    roomCode = roomCodeToTry;
+
+
     return true;
 }
 
-function joinRoomFunc(roomCodeEl) {
+async function joinRoomFunc(roomCodeEl) {
     console.log("In joinRoomFunc")
-    let roomCode = roomCodeEl.value;
+    let roomCodeToTry = roomCodeEl.value;
+
+    let isJoined = await checkRoom(roomCodeToTry);
     
-    if (checkRoom(roomCode)) {
+    if (isJoined) {
         if (document.contains(document.getElementById("room-full-mssg"))) {
             document.getElementById("room-full-mssg").remove();
         };
         startGame(); 
     } else {
-        const roomFullMssg = document.createTextNode("Room " + roomCode + " is full! Try another code");
+        const roomFullMssg = document.createElement("span");
+        roomFullMssg.innerHTML = "<p>Room " + roomCodeToTry + " is full! Try another code</p><br>"
         roomFullMssg.id = "room-full-mssg";
-        const container = document.getElementById("container");
         container.appendChild(roomFullMssg);
-        document.body.insertBefore(roomFullMssg, container);
+
+        const roomCodeInput = document.getElementById("room-code-input");
+        container.insertBefore(roomFullMssg, roomCodeInput);
     }
 }
 
-function createRoomFunc() {
+async function createRoomFunc() {
     console.log("Creating room...")
     //Get random string for room code
-    let roomCode = (Math.random() + 1).toString(36).substring(7)
+    let roomCodeToTry = (Math.random() + 1).toString(36).substring(7)
 
-    while (!(checkRoom(roomCode))) {
-        console.log("Room " + roomCode + "didn't work...")
-        roomCode = toString(parseInt(roomCode) + 1);
+    let isJoined = await checkRoom(roomCodeToTry);
+
+    while (!isJoined) {
+        console.log("Room " + roomCodeToTry + "didn't work...")
+        roomCodeToTry = toString(parseInt(roomCodeToTry) + 1);
+        isJoined = await checkRoom(roomCodeToTry);
     }
 
     startGame();
@@ -177,6 +193,7 @@ function startup() {
     spacer2.innerHTML = "<br><br><br>"
     const roomCodeInput = document.createElement("input");
     roomCodeInput.className = "startup";
+    roomCodeInput.id = "room-code-input";
     roomCodeInput.textContent = "Room code";
     const createRoomButton = document.createElement("button");
     createRoomButton.className = "startup";
@@ -205,6 +222,23 @@ function startup() {
 function startGame() {
     console.log("Starting game...")
     document.querySelectorAll('.startup').forEach(e => e.remove());
+
+    const roomCodeText = document.createTextNode("Room code: " + roomCode);
+    container.appendChild(roomCodeText);
+    container.insertBefore(roomCodeText, contentBottom);
+
+    const roomCodeHeader = document.createElement("span");
+    roomCodeHeader.innerHTML = `
+    <br>
+    <button id="leave-room">Leave Room</button>
+    <br>
+    <br>
+    `
+    container.appendChild(roomCodeHeader);
+    container.insertBefore(roomCodeHeader, contentBottom);
+
+    const leaveRoomButton = document.getElementById("leave-room");
+    leaveRoomButton.addEventListener('click', () => room.leave());
 
     const gameHTML = document.createElement("span");
     gameHTML.innerHTML = `
