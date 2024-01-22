@@ -1,13 +1,17 @@
 import {joinRoom} from './trystero-torrent.min.js';
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
+const id2player = {1: "X", 2: "O"};
 
 let gameActive = true;
 let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
+
 let room;
 let roomCode;
+let playerID;
+let awaitingPlayers = false;
 let sendResultValidation;
 let sendCellPlayed;
 let sendRestartGame;
@@ -19,6 +23,7 @@ const container = document.getElementById("container");
 const contentBottom = document.getElementById("content-bottom");
 
 const MAX_PLAYERS = 2;
+const MIN_PLAYERS = 2;
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
 const currentPlayerTurn = () => `It's ${currentPlayer}'s turn`;
@@ -89,7 +94,7 @@ function handleCellClick(clickedCellEvent) {
     const clickedCell = clickedCellEvent.target;
     const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
 
-    if(gameState[clickedCellIndex] !== "" || !gameActive)
+    if(gameState[clickedCellIndex] !== "" || currentPlayer !== id2player[playerID] || !gameActive)
         return;
 
     handleCellPlayed(clickedCell, clickedCellIndex);
@@ -119,22 +124,40 @@ function handleRestartClick() {
 async function checkRoom(roomCodeToTry) {
     console.log("Attempting to join room " + roomCodeToTry + "...")
     room = joinRoom(config, roomCodeToTry);
+
+    const joiningRoomMsg = document.createElement("span");
+    joiningRoomMsg.innerHTML = "<p>Joining room " + roomCodeToTry + "...</p>"
+    joiningRoomMsg.id = "joining-room-msg";
+    container.appendChild(joiningRoomMsg);
+
+    const roomCodeInput = document.getElementById("room-code-input");
+    container.insertBefore(joiningRoomMsg, roomCodeInput);
+
     room.onPeerJoin(peerId => {
         console.log(`${peerId} joined`);
         numPlayers += 1;
+        if (awaitingPlayers && numPlayers >= MIN_PLAYERS) {
+            if (document.contains(document.getElementById("await-players-msg"))) {
+                document.getElementById("await-players-msg").remove();
+            };
+            startGame();
+        }
     });
     room.onPeerLeave(peerId => {
         console.log(`${peerId} left`);
         numPlayers -= 1;
     });
+    // Ensure time for all connections by sleeping
+    await delay(5000);
+    joiningRoomMsg.remove();
 
-    await delay(1000);
-
-    if (numPlayers > MAX_PLAYERS) {
+    let peersList = Object.keys(room.getPeers());
+    if (peersList.length + 1 > MAX_PLAYERS) {
         console.log("Room "+ roomCodeToTry +" full! Exiting");
         room.leave()
         return false;
     }
+    playerID = peersList.length + 1;
 
     console.log("Joined room " + roomCodeToTry);
 
@@ -151,18 +174,30 @@ async function joinRoomFunc(roomCodeEl) {
     let isJoined = await checkRoom(roomCodeToTry);
     
     if (isJoined) {
-        if (document.contains(document.getElementById("room-full-mssg"))) {
-            document.getElementById("room-full-mssg").remove();
+        if (document.contains(document.getElementById("room-full-msg"))) {
+            document.getElementById("room-full-msg").remove();
         };
-        startGame(); 
+        if (numPlayers < MIN_PLAYERS) {
+            const awaitPlayersMsg = document.createElement("span");
+            awaitPlayersMsg.innerHTML = "<p>Joined room " + roomCodeToTry + "! Waiting for other players...</p>";
+            awaitPlayersMsg.id = "await-players-msg";
+            container.appendChild(awaitPlayersMsg);
+            awaitingPlayers = true;
+        } else {
+            if (document.contains(document.getElementById("await-players-msg"))) {
+                document.getElementById("await-players-msg").remove();
+            };
+            awaitingPlayers = false;
+            startGame();
+        } 
     } else {
-        const roomFullMssg = document.createElement("span");
-        roomFullMssg.innerHTML = "<p>Room " + roomCodeToTry + " is full! Try another code</p><br>"
-        roomFullMssg.id = "room-full-mssg";
-        container.appendChild(roomFullMssg);
+        const roomFullMsg = document.createElement("span");
+        roomFullMsg.innerHTML = "<p>Room " + roomCodeToTry + " is full! Try another code</p>"
+        roomFullMsg.id = "room-full-msg";
+        container.appendChild(roomFullMsg);
 
         const roomCodeInput = document.getElementById("room-code-input");
-        container.insertBefore(roomFullMssg, roomCodeInput);
+        container.insertBefore(roomFullMsg, roomCodeInput);
     }
 }
 
@@ -179,7 +214,18 @@ async function createRoomFunc() {
         isJoined = await checkRoom(roomCodeToTry);
     }
 
-    startGame();
+    if (numPlayers < MIN_PLAYERS) {
+        const awaitPlayersMsg = document.createElement("span");
+        awaitPlayersMsg.innerHTML = "<p>Joined room " + roomCodeToTry + "! Waiting for other players...</p>";
+        awaitPlayersMsg.id = "await-players-msg";
+        const roomCodeInput = document.getElementById("room-code-input");
+        container.insertBefore(awaitPlayersMsg, roomCodeInput);
+
+        awaitingPlayers = true;
+    } else {
+        startGame();
+    }
+    
 }
 
 function startup() {
@@ -219,11 +265,18 @@ function startup() {
 
 }
 
+function leaveGame() {
+    room.leave();
+    document.querySelectorAll('.game').forEach(e => e.remove());
+    startup();
+}
+
 function startGame() {
     console.log("Starting game...")
     document.querySelectorAll('.startup').forEach(e => e.remove());
 
     const roomCodeText = document.createTextNode("Room code: " + roomCode);
+    roomCodeText.className = "game";
     container.appendChild(roomCodeText);
     container.insertBefore(roomCodeText, contentBottom);
 
@@ -234,15 +287,14 @@ function startGame() {
     <br>
     <br>
     `
+    roomCodeHeader.className = "game";
     container.appendChild(roomCodeHeader);
     container.insertBefore(roomCodeHeader, contentBottom);
-
-    const leaveRoomButton = document.getElementById("leave-room");
-    leaveRoomButton.addEventListener('click', () => room.leave());
 
     const gameHTML = document.createElement("span");
     gameHTML.innerHTML = `
     <section>
+        <h2 id="this-player-msg" class="game--status"></h2>
         <div class="game--container">
             <div data-cell-index="0" class="cell"></div>
             <div data-cell-index="1" class="cell"></div>
@@ -254,17 +306,24 @@ function startGame() {
             <div data-cell-index="7" class="cell"></div>
             <div data-cell-index="8" class="cell"></div>
         </div>
-        <h2 class="game--status"></h2>
+        <h2 id="current-player-msg" class="game--status"></h2>
         <button class="game--restart">Restart Game</button>
     </section>
     `
+    gameHTML.className = "game";
     container.appendChild(gameHTML);
     container.insertBefore(gameHTML, contentBottom);
+
+    const leaveRoomButton = document.getElementById("leave-room");
+    leaveRoomButton.addEventListener('click', leaveGame);
 
     document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
     document.querySelector('.game--restart').addEventListener('click', handleRestartClick);
 
-    statusDisplay = document.querySelector('.game--status');
+    let thisPlayer = document.getElementById("this-player-msg");
+    thisPlayer.innerHTML = "You're playing as " + id2player[playerID];
+
+    statusDisplay = document.getElementById("current-player-msg");
     statusDisplay.innerHTML = currentPlayerTurn();
 
     let getCellPlayed;
