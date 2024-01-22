@@ -1,16 +1,15 @@
-html, body {
-}
-
-p {
-}
-
 body {
 	margin: 0;
 	padding: 0;
 	font-family:  Arial, Helvetica, sans-serif;
 	font-size: 13px;
-	color: #F1F5F8;
-    background: #ff8f8f
+	color: black;
+  background: #ff8f8f
+}
+
+.spacer {
+  height:50px;
+  width:1px;
 }
 
 .box { /*any of the box layouts & white backgrounds*/
@@ -165,7 +164,7 @@ section {
 }
 
 .game--title {
-  font-size: 100px;
+  font-size: 4rem;
   color: #000066;
   margin: 10px auto;
 }
