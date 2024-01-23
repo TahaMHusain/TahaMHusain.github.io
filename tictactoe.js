@@ -1,7 +1,7 @@
 import {joinRoom, selfId} from './trystero-torrent.min.js';
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
-const id2player = {1: "X", 2: "O"};
+const id2player = {0: "X", 1: "O"};
 
 let gameActive = true;
 let currentPlayer = "X";
@@ -273,9 +273,11 @@ function leaveGame() {
 function startGame() {
     console.log("Starting game...")
 
+    // Assign player order by alphabetical order of selfId
     let playerList = Object.keys(room.getPeers());
-    sortedPlayers = playerList.sort();
-    playerID = sortedPlayers.indexOf(selfId);
+    playerList.push(selfId);
+    playerList.sort();
+    playerID = playerList.indexOf(selfId);
 
     document.querySelectorAll('.startup').forEach(e => e.remove());
 
