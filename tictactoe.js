@@ -1,4 +1,4 @@
-import {joinRoom} from './trystero-torrent.min.js';
+import {joinRoom, selfId} from './trystero-torrent.min.js';
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 const id2player = {1: "X", 2: "O"};
@@ -157,7 +157,6 @@ async function checkRoom(roomCodeToTry) {
         room.leave()
         return false;
     }
-    playerID = peersList.length + 1;
 
     console.log("Joined room " + roomCodeToTry);
 
@@ -273,6 +272,11 @@ function leaveGame() {
 
 function startGame() {
     console.log("Starting game...")
+
+    let playerList = Object.keys(room.getPeers());
+    sortedPlayers = playerList.sort();
+    playerID = sortedPlayers.indexOf(selfId);
+
     document.querySelectorAll('.startup').forEach(e => e.remove());
 
     const roomCodeText = document.createTextNode("Room code: " + roomCode);
