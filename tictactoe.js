@@ -1,3 +1,5 @@
+// Adapted from https://github.com/arasgungore/Tic-Tac-Toe
+
 import {joinRoom, selfId} from './trystero-torrent.min.js';
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -128,10 +130,11 @@ async function checkRoom(roomCodeToTry) {
     const joiningRoomMsg = document.createElement("span");
     joiningRoomMsg.innerHTML = "<p>Joining room " + roomCodeToTry + "...</p>"
     joiningRoomMsg.id = "joining-room-msg";
+    joiningRoomMsg.className = "game--status";
     container.appendChild(joiningRoomMsg);
 
-    const roomCodeInput = document.getElementById("room-code-input");
-    container.insertBefore(joiningRoomMsg, roomCodeInput);
+    const createRoomButton = document.getElementById("create-room-button");
+    container.insertBefore(joiningRoomMsg, createRoomButton);
 
     room.onPeerJoin(peerId => {
         console.log(`${peerId} joined`);
@@ -166,10 +169,8 @@ async function checkRoom(roomCodeToTry) {
     return true;
 }
 
-async function joinRoomFunc(roomCodeEl) {
+async function joinRoomFunc(roomCodeToTry) {
     console.log("In joinRoomFunc")
-    let roomCodeToTry = roomCodeEl.value;
-
     let isJoined = await checkRoom(roomCodeToTry);
     
     if (isJoined) {
@@ -195,8 +196,8 @@ async function joinRoomFunc(roomCodeEl) {
         roomFullMsg.id = "room-full-msg";
         container.appendChild(roomFullMsg);
 
-        const roomCodeInput = document.getElementById("room-code-input");
-        container.insertBefore(roomFullMsg, roomCodeInput);
+        const createRoomButton = document.getElementById("create-room-button");
+        container.insertBefore(roomFullMsg, createRoomButton);
     }
 }
 
@@ -215,10 +216,16 @@ async function createRoomFunc() {
 
     if (numPlayers < MIN_PLAYERS) {
         const awaitPlayersMsg = document.createElement("span");
-        awaitPlayersMsg.innerHTML = "<p>Joined room " + roomCodeToTry + "! Waiting for other players...</p>";
+        awaitPlayersMsg.innerHTML = "<p>Joined room " + roomCodeToTry + "! Waiting for other players...</p> <br>";
         awaitPlayersMsg.id = "await-players-msg";
-        const roomCodeInput = document.getElementById("room-code-input");
-        container.insertBefore(awaitPlayersMsg, roomCodeInput);
+        const createRoomButton = document.getElementById("create-room-button");
+        container.insertBefore(awaitPlayersMsg, createRoomButton);
+
+        const roomLinkMsg = document.createElement("span");
+        roomLinkMsg.innerHTML = "<p> Link to room: </p> <p>" + window.location.href + "?roomCode=" + roomCodeToTry + "</p>";
+        roomLinkMsg.id = "room-link-msg";
+        container.insertBefore(roomLinkMsg, createRoomButton);
+
 
         awaitingPlayers = true;
     } else {
@@ -231,6 +238,7 @@ function startup() {
     const joinButton = document.createElement("button");
     joinButton.className = "startup";
     joinButton.textContent = "Join Room";
+    joinButton.id = "join-button";
     const spacer = document.createElement("br");
     spacer.className = "startup";
     const spacer2 = document.createElement("span");
@@ -243,6 +251,7 @@ function startup() {
     const createRoomButton = document.createElement("button");
     createRoomButton.className = "startup";
     createRoomButton.textContent = "Create Room";
+    createRoomButton.id = "create-room-button"
 
     const container = document.getElementById("container");
     container.appendChild(joinButton);
@@ -251,14 +260,22 @@ function startup() {
     container.appendChild(roomCodeInput);
     container.appendChild(createRoomButton);
 
-    joinButton.addEventListener('click', () => joinRoomFunc(roomCodeInput));
+    joinButton.addEventListener('click', () => joinRoomFunc(roomCodeInput.value));
     createRoomButton.addEventListener('click', createRoomFunc);
 
+    container.insertBefore(createRoomButton, contentBottom);
+    container.insertBefore(spacer2, contentBottom);
     container.insertBefore(roomCodeInput, contentBottom);
     container.insertBefore(spacer, contentBottom);
     container.insertBefore(joinButton, contentBottom);
-    container.insertBefore(spacer2, contentBottom);
-    container.insertBefore(createRoomButton, contentBottom);
+
+    const queryString = window.location.search;
+    console.log(queryString);
+    if (queryString.length > 1) {
+        const urlParams = new URLSearchParams(queryString);
+        let roomCodeToTry = urlParams.get("roomCode");
+        joinRoomFunc(roomCodeToTry);
+    }
 
     
 
