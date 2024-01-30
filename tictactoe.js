@@ -103,7 +103,7 @@ function handleCellClick(clickedCellEvent) {
     handleResultValidation();
     if (numPlayers > 1) {
         sendCellPlayed(clickedCellIndex);
-        sendResultValidation({dummy: "dummy"});
+        sendResultValidation("resultVal");
     }
     
 }
@@ -119,7 +119,7 @@ function handleRestartGame() {
 function handleRestartClick() {
     handleRestartGame();
     if (numPlayers > 1) {
-        sendRestartGame({dummy: "dummy"});
+        sendRestartGame("restartGame");
     }
 }
 
