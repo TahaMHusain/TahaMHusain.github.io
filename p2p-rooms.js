@@ -39,18 +39,23 @@ async function joinCreatedRoom(roomCode, hostId, config, MAX_PLAYERS) {
     }
     clearTimeout(hostJoinTimeout);
 
+    // Request the masterPeerDict from host
     const requestMasterDict = room.makeAction("reqMD")[0];
     requestMasterList("reqMD");
-    // TODO: Check if master dict is still undefined first?
+    // Wait until masterPeerDict is sent over
+    while (masterPeerDict === undefined) {
+        await delay(100);
+    };
+    // If room is full, leave
     if (Object.keys(masterPeerDict).length + 1 > MAX_PLAYERS) {
         room.leave()
         console.log("Failed to join room " + roomCode + ": room is full!")
         return false;
     }
+    // Send the join time to the host
+    sendJoinTime(joinTime, hostId);
 
-
-
-    return [true, room, joinTime];
+    return true;
 }
 
 /**
