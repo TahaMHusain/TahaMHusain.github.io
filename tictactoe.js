@@ -103,7 +103,7 @@ function handleCellClick(clickedCellEvent) {
     handleResultValidation();
     if (numPlayers > 1) {
         sendCellPlayed(clickedCellIndex);
-        sendResultValidation("resultVal");
+        sendResultValidation("resultV");
     }
     
 }
@@ -211,6 +211,10 @@ async function createRoomFunc() {
     while (!isJoined) {
         console.log("Room " + roomCodeToTry + "didn't work...")
         roomCodeToTry = toString(parseInt(roomCodeToTry) + 1);
+        room.onPeerLeave(peerId => {
+            console.log(`${peerId} left`);
+            
+        });
         isJoined = await checkRoom(roomCodeToTry);
     }
 
@@ -353,9 +357,9 @@ function startGame() {
     let getResultValidation;
     let getRestartGame;
 
-    [sendCellPlayed, getCellPlayed] = room.makeAction('cellPlayed');
-    [sendResultValidation, getResultValidation] = room.makeAction('resultV');
-    [sendRestartGame, getRestartGame] = room.makeAction('restartGame');
+    [sendCellPlayed, getCellPlayed] = room.makeAction("cellPlayed");
+    [sendResultValidation, getResultValidation] = room.makeAction("resultV");
+    [sendRestartGame, getRestartGame] = room.makeAction("restartGame");
 
     getCellPlayed(handleCellPlayedPeer);
     getResultValidation(handleResultValidation);
