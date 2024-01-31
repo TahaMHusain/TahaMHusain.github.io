@@ -1,6 +1,6 @@
 import {joinRoom, selfId} from './trystero-torrent.min.js';
 
-const peersDict = {}
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 /**
  * Joines created room (unless room is full)
@@ -70,7 +70,7 @@ async function joinCreatedRoom(roomCode, hostId, config, MAX_PLAYERS) {
  *  [0]: whether or not room was created
  *  [1]: room code of created room (null if no room created)
  */
-async function createRoomFunc(config) {
+async function createRoom(config) {
     // Create global vars for the room and masterPeerDict
     globalThis.room;
     globalThis.masterPeerDict;
@@ -142,5 +142,4 @@ function startClientListeners() {
     });
 }
 
-
-
+export {createRoom, joinCreatedRoom};
