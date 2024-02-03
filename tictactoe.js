@@ -1,6 +1,7 @@
 // Adapted from https://github.com/arasgungore/Tic-Tac-Toe
 
 import {joinRoom, selfId} from './trystero-torrent.min.js';
+import {Player} from "./p2p-rooms.js";
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 const id2player = {0: "X", 1: "O"};
@@ -9,9 +10,6 @@ let gameActive = true;
 let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
-
-let room;
-let roomCode;
 let playerID;
 let awaitingPlayers = false;
 let sendResultValidation;
@@ -24,12 +22,11 @@ let numPlayers = 1;
 const container = document.getElementById("container");
 const contentBottom = document.getElementById("content-bottom");
 
-const MAX_PLAYERS = 2;
-const MIN_PLAYERS = 2;
+
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
 const currentPlayerTurn = () => `It's ${currentPlayer}'s turn`;
-const config = {appId: 'taha-tictactoetest'};
+
 
 startup();
 
@@ -63,16 +60,8 @@ function handlePlayerChange() {
 
 function handleResultValidation() {
     let roundWon = false;
-    for(let i = 0; i <= 7; i++) {
-        const winCondition = winningConditions[i];
-        const a = gameState[winCondition[0]];
-        const b = gameState[winCondition[1]];
-        const c = gameState[winCondition[2]];
-        if(a === '' || b === '' || c === '')
-            continue;
-        if(a === b && b === c) {
-            roundWon = true;
-            break
+    for(let i = 0; i <= 7; i++) {// Send updated master list to all peers
+        room.makeAction("masterDict")[0](masterPeerDict);
         }
     }
 
@@ -201,85 +190,61 @@ async function joinRoomFunc(roomCodeToTry) {
     }
 }
 
-async function createRoomFunc() {
-    console.log("Creating room...")
-    //Get random string for room code
-    let roomCodeToTry = (Math.random() + 1).toString(36).substring(7)
+async function waitingRoom(roomJoinQueryString, MIN_PLAYERS) {
+    console.log("In waiting room...")
+    const awaitPlayersMsg = document.createElement("span");
+    awaitPlayersMsg.innerHTML = "<p>Joined room! Waiting for other players...</p> <br>";
+    awaitPlayersMsg.id = "await-players-msg";
+    const createRoomButton = document.getElementById("create-room-button");
+    container.insertBefore(awaitPlayersMsg, createRoomButton);
 
-    let isJoined = await checkRoom(roomCodeToTry);
+    const roomLinkMsg = document.createElement("span");
+    roomLinkMsg.innerHTML = "<p> Link to room: </p> <p>" + window.location.href + roomJoinQueryString + "</p>";
+    roomLinkMsg.id = "room-link-msg";
+    container.insertBefore(roomLinkMsg, createRoomButton);
 
-    while (!isJoined) {
-        console.log("Room " + roomCodeToTry + "didn't work...")
-        roomCodeToTry = toString(parseInt(roomCodeToTry) + 1);
-        room.onPeerLeave(peerId => {
-            console.log(`${peerId} left`);
-            
-        });
-        isJoined = await checkRoom(roomCodeToTry);
-    }
-
-    if (numPlayers < MIN_PLAYERS) {
-        const awaitPlayersMsg = document.createElement("span");
-        awaitPlayersMsg.innerHTML = "<p>Joined room " + roomCodeToTry + "! Waiting for other players...</p> <br>";
-        awaitPlayersMsg.id = "await-players-msg";
-        const createRoomButton = document.getElementById("create-room-button");
-        container.insertBefore(awaitPlayersMsg, createRoomButton);
-
-        const roomLinkMsg = document.createElement("span");
-        roomLinkMsg.innerHTML = "<p> Link to room: </p> <p>" + window.location.href + "?roomCode=" + roomCodeToTry + "</p>";
-        roomLinkMsg.id = "room-link-msg";
-        container.insertBefore(roomLinkMsg, createRoomButton);
+    room.onPeerJoin(peerId => {
+        if (Object.keys(room.getPeers()).length + 1 > MIN_PLAYERS) {
+            startGame();
+        }
+    })
 
 
-        awaitingPlayers = true;
-    } else {
-        startGame();
-    }
+    awaitingPlayers = true;
     
 }
 
 function startup() {
-    const joinButton = document.createElement("button");
-    joinButton.className = "startup";
-    joinButton.textContent = "Join Room";
-    joinButton.id = "join-button";
-    const spacer = document.createElement("br");
-    spacer.className = "startup";
-    const spacer2 = document.createElement("span");
-    spacer2.className = "startup";
-    spacer2.innerHTML = "<br><br><br>"
-    const roomCodeInput = document.createElement("input");
-    roomCodeInput.className = "startup";
-    roomCodeInput.id = "room-code-input";
-    roomCodeInput.textContent = "Room code";
-    const createRoomButton = document.createElement("button");
-    createRoomButton.className = "startup";
-    createRoomButton.textContent = "Create Room";
-    createRoomButton.id = "create-room-button"
-
-    const container = document.getElementById("container");
-    container.appendChild(joinButton);
-    container.appendChild(spacer);
-    container.appendChild(spacer2);
-    container.appendChild(roomCodeInput);
-    container.appendChild(createRoomButton);
-
-    joinButton.addEventListener('click', () => joinRoomFunc(roomCodeInput.value));
-    createRoomButton.addEventListener('click', createRoomFunc);
-
-    container.insertBefore(createRoomButton, contentBottom);
-    container.insertBefore(spacer2, contentBottom);
-    container.insertBefore(roomCodeInput, contentBottom);
-    container.insertBefore(spacer, contentBottom);
-    container.insertBefore(joinButton, contentBottom);
-
     const queryString = window.location.search;
-    console.log(queryString);
     if (queryString.length > 1) {
         const urlParams = new URLSearchParams(queryString);
-        let roomCodeToTry = urlParams.get("roomCode");
-        joinRoomFunc(roomCodeToTry);
-    }
+        let player = new Player(
+            config=config,
+            roomCode=urlParams.get("roomCode"),
+            hostId=urlParams.get("hostId"),
+            MAX_PLAYERS=MAX_PLAYERS,
+            MIN_PLYERS=MIN_PLAYERS
+        );
+    };
+    
+    const createRoomButton = document.createElement("span");
+    createRoomButton.innerHTML = `
+        <button className=startup id=create-room-button>Create Room</button>
+    `
+    const container = document.getElementById("container");
+    container.appendChild(createRoomButton);
+    // container.insertBefore(createRoomButton, contentBottom);
+    createRoomButton.addEventListener('click', () => {
+        const [isCreated, roomJoinQueryString] = createRoom(config);
+        if (!isCreated) {
+            //TODO: better error handling
+            console.log("room not joined");
+        } else {
+            waitingRoom(roomJoinQueryString, MIN_PLAYERS);
+        }
+    });
+
+
 
     
 
