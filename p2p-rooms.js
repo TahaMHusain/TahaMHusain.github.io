@@ -4,6 +4,7 @@ function Player(
     config,
     roomCode,
     hostId,
+    name,
     preCreateRoomPage,
     preStartGamePage,
     preJoinRoomPage,
@@ -17,11 +18,16 @@ function Player(
     this.MIN_PLAYERS = MIN_PLAYERS;
     this.MAX_PLAYERS = MAX_PLAYERS;
     this.roomCode = roomCode;
+    this.name = name;
     this.joinRoomPage = joinRoomPage;
     this.masterPeerDict = undefined;
     this.roomJoinQueryString = undefined;
     this._room = undefined;
-    this.delay = ms => new Promise(res => setTimeout(res, ms));
+    /**
+     * Delays execution
+     * @param {number}  milliseconds of delay
+     */
+    this._delay = ms => new Promise(res => setTimeout(res, ms));
     /**
      * Joins created room (unless room is full)
      * @param {string} hostId       peer id of room host
@@ -56,7 +62,7 @@ function Player(
         requestMasterDict("reqMPD");
         // Wait until masterPeerDict is sent over
         while (this.masterPeerDict === undefined) {
-            await this.delay(100);
+            await this._delay(100);
         };
         // If room is full, leave
         if (Object.keys(this.masterPeerDict).length + 1 > this.MAX_PLAYERS) {
@@ -92,7 +98,7 @@ function Player(
             this.roomCode = (Math.random() + 1).toString(36).substring(7);
             this._room = joinRoom(this.config, this.roomCode);
             // 5s delay to find all peers in room
-            await delay(5000);
+            await this._delay(5000);
             // Find number of peers in room
             numPeers = Object.keys(this._room.getPeers()).length;
         }
