@@ -1,15 +1,15 @@
-import {joinRoom, selfId} from './trystero-torrent.min.js';
+import {joinRoom, selfId} from '../trystero-torrent.min.js';
 
 function Player(
     config,
     roomCode,
     hostId,
     name,
-    preCreateRoomPage,
-    preStartGamePage,
-    preJoinRoomPage,
-    preJoinGamePage,
-    gamePage,
+    go2PreCreateRoomPage,
+    go2PreStartGamePage,
+    go2PreJoinRoomPage,
+    go2PreJoinGamePage,
+    go2GamePage,
     MAX_PLAYERS,
     MIN_PLAYERS = 0,
 ) {
@@ -23,11 +23,19 @@ function Player(
     this.masterPeerDict = undefined;
     this.roomJoinQueryString = undefined;
     this._room = undefined;
+
+    this.currentPageFunc = undefined;
+    this.go2PreCreateRoomPage = go2PreCreateRoomPage;
+    this.go2PreStartGamePage = go2PreStartGamePage;
+    this.go2PreJoinRoomPage = go2PreJoinRoomPage;
+    this.go2PreJoinGamePage = go2PreJoinGamePage;
+    this.go2GamePage = go2GamePage;
     /**
-     * Delays execution
-     * @param {number}  milliseconds of delay
+     * Function to delay execution
+     * @param {number} ms   milliseconds of delay
      */
     this._delay = ms => new Promise(res => setTimeout(res, ms));
+
     /**
      * Joins created room (unless room is full)
      * @param {string} hostId       peer id of room host
@@ -35,7 +43,7 @@ function Player(
     this._joinCreatedRoom = async (hostId) => {
         this._room = joinRoom(this.config, this.roomCode);
         const joinTime = Date.now();
-        this.startClientListeners();
+        this._startClientListeners();
     
         // Create func for sending join time
         const sendJoinTime = this._room.makeAction("joinTime")[0];
@@ -54,16 +62,20 @@ function Player(
         while (!foundHost) {
             peerList = Object.keys(this._room.getPeers());
             foundHost = peerList.includes(hostId);
-        }
+        };
         clearTimeout(hostJoinTimeout);
     
         // Request the masterPeerDict from host
         const requestMasterDict = this._room.makeAction("reqMPD")[0];
-        requestMasterDict("reqMPD");
+        await requestMasterDict("reqMPD");
+
+        /** Not necessary if await works on WebRTC requests
         // Wait until masterPeerDict is sent over
         while (this.masterPeerDict === undefined) {
             await this._delay(100);
         };
+         */
+
         // If room is full, leave
         if (Object.keys(this.masterPeerDict).length + 1 > this.MAX_PLAYERS) {
             this._room.leave()
@@ -74,14 +86,15 @@ function Player(
         // Send the join time to the host
         sendJoinTime(joinTime, hostId);
 
-        // Go straight to waiting room
-
+        // Determine what page the host is on and go to that page
+        this.currentPageFunc = await this._room.makeAction("reqPage")[0]();
+        this.currentPageFunc();
     };
+
     /**
      * Creates (& joins) a new room
-     * NOTE: sets masterPeerDict as global variable
      */
-    this._createRoom = async (hostId) => {
+    this._createRoom = async () => {
         // Initialize count to start while loop
         let numPeers = 1;
         // Set 1min timeout on creating empty room
@@ -101,7 +114,7 @@ function Player(
             await this._delay(5000);
             // Find number of peers in room
             numPeers = Object.keys(this._room.getPeers()).length;
-        }
+        };
         clearTimeout(createRoomTimeout);
         // Record join time
         let joinTime = Date.now();
@@ -111,24 +124,29 @@ function Player(
             "isHost": true,
             "joinTime": joinTime,
         }};
-        startHostListeners();
+        this._startHostListeners();
         const queryString = "roomCode=" + this.roomCode + "&hostId=" + selfId;
         this.roomJoinQueryString = queryString;
+
+        // Go to game the preStartGame page
+        this.go2PreStartGamePage();
     };
+
     // TODO: clear out room-related property values
     this.leaveRoom = () => {
         if (this.masterPeerDict[selfId]["isHost"] === true) {
             this._leaveRoomHost();
         } else {
             this._leaveRoomClient();
-        }
-    },
+        };
+    };
+
     this._leaveRoomHost = () => {
         // If there's only one peer in the room, just empty the peer dict and leave
         if (Object.keys(this.masterPeerDict).length < 2) {
             masterPeerDict = undefined
             return;
-        }
+        };
         // Remove own entry from peer dict
         delete this.masterPeerDict[selfId];
         // Get list of joinTimes and find the smallest (earliest) one
@@ -147,9 +165,11 @@ function Player(
         // Tell new host to promote
         this._room.makeAction("promote")[0]("", earliestJoinedPeerId);  
     };
+
     this._leaveRoomClient = () => {
         this._room.leave();
     };
+
     /**
      * Starts listener functions for host peer to use
      */
@@ -160,18 +180,30 @@ function Player(
         receiveRequestMD(e => {
             this._room.makeAction("MPD")[0](this.masterPeerDict);
         });
+
         // Func to receive join times forom entering peers
         const getJoinTime = this._room.makeAction("joinTime")[1];
         // Listen for peers sending join times
         getJoinTime((t, id) => {
             // Update master list with new join time
-            this.masterPeerDict.push({[id]: {
+            this.masterPeerDict[id] = {
                 "isHost": false,
                 "joinTime": t
-            }});
+            };
             // Send updated master list to all peers
             this._room.makeAction("MPD")[0](this.masterPeerDict);
+            // If in preStartGamePage, check if game should start
+            if (Object.keys(this.masterPeerDict).length >= this.MIN_PLAYERS) {
+
+            }
         });
+
+        const getRequestForCurrentPage = this._room.makeAction("reqPage")[1];
+        // Listen for requests for information about which page everyone is on
+        getRequestForCurrentPage(() => {
+            this._room.makeAction("curPage")[0](this.currentPageFunc);
+        });
+
         // Listen for peers leaving to update list and send out updated MPD
         this._room.onPeerLeave(peerId => {
             delete this.masterPeerDict[peerId];
@@ -182,9 +214,10 @@ function Player(
             if (Object.keys(this.masterPeerDict).length < this.MIN_PLAYERS) {
                 this._room.makeAction("kicked")[0]();
                 this.preStartGamePage();
-            }
-        })
+            };
+        });
     };
+
     /**
      * Starts listener functions for client peer to use
      */
@@ -205,15 +238,22 @@ function Player(
         // Listen for host telling user to go back to waiting room
         getKickedOutOfGame(() => {
             this.preStartGamePage();
-        })
+        });
+
+        const getCurrentPage = this._room.makeAction("curPage")[1];
+        // Listen for status updates about what page everyone's on
+        getCurrentPage((c) => {
+            this.currentPageFunc = c;
+        });
     };
+
     this._promoteToHost = () => {
         // TODO: remove the client listeners. Maybe import Peer class from library?
         this._startHostListeners();
     };
 
     // Object initialization
-    roomCode === undefined ? this._createRoom() : this._joinCreatedRoom(hostId);
+    this.roomCode === undefined ? this._createRoom() : this._joinCreatedRoom(hostId);
 };
 
 export {Player};

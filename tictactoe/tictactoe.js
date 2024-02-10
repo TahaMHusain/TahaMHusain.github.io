@@ -1,6 +1,6 @@
 // Adapted from https://github.com/arasgungore/Tic-Tac-Toe
 
-import {joinRoom, selfId} from './trystero-torrent.min.js';
+import {joinRoom, selfId} from '../trystero-torrent.min.js';
 import {Player} from "./p2p-rooms.js";
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
