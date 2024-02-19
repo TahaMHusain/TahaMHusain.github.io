@@ -69,18 +69,26 @@ function Player(
         });
         // Request the masterPeerDict from host
         console.log("Waiting for masterPeerDict...")
-        const requestMasterDict = this._room.makeAction("reqMPD")[0];
         // TODO: Make this actually wait for a promise to resolve!
-        await requestMasterDict("reqMPD");
-        await this._delay(500);
-        console.log("received masterPeerDict! in _foundHostFunc!" + this.masterPeerDict)
+        this._room.makeAction("reqMPD")[0]("reqMPD");
+        // Function that returns a promise that resolves when the variable changes
+        const waitForMPD = () => {
+            return new Promise((resolve) => {
+                const checkVariable = () => {
+                    if (this.masterPeerDict === undefined) {
+                        console.log("MPD not found yet! " + this.masterPeerDict);
+                        // If not changed, wait for a short duration and check again
+                        setTimeout(checkVariable, 1000);
+                    } else {
+                        resolve();
+                    };
+                };
 
-        /** Not necessary if await works on WebRTC requests
-        // Wait until masterPeerDict is sent over
-        while (this.masterPeerDict === undefined) {
-            await this._delay(100);
+                checkVariable();
+            });
         };
-         */
+        await waitForMPD();
+        console.log("received masterPeerDict in _foundHostFunc! " + this.masterPeerDict)
 
         // If room is full, leave
         if (Object.keys(this.masterPeerDict).length + 1 > this.MAX_PLAYERS) {
@@ -94,8 +102,26 @@ function Player(
         // Send the join time to the host
         sendJoinTime(joinTime, hostId);
 
+        console.log("Waiting for current page info...");
         // Determine what page the host is on and go to that page
-        this.currentPageFunc = await this._room.makeAction("reqPage")[0]("reqPage");
+        this._room.makeAction("reqPage")[0]("reqPage");
+        // Function that returns a promise that resolves when the variable changes
+        const waitForCurPage = () => {
+            return new Promise((resolve) => {
+                const checkVariable = () => {
+                    if (this.currentPageFunc === undefined) {
+                        console.log("currentPageFunc not found yet! " + this.currentPageFunc);
+                        // If not changed, wait for a short duration and check again
+                        setTimeout(checkVariable, 1000);
+                    } else {
+                        resolve();
+                    };
+                };
+
+                checkVariable();
+            });
+        };
+        await waitForCurPage();
         this.currentPageFunc();
     }
 
@@ -215,6 +241,7 @@ function Player(
         // Listen for requests for information about which page everyone is on
         getRequestForCurrentPage(() => {
             // Send everyone the current page
+            console.log("sending current page from host!");
             this._room.makeAction("curPage")[0](this.currentPageFunc);
         });
 
@@ -253,13 +280,16 @@ function Player(
         const getCurrentPage = this._room.makeAction("curPage")[1];
         // Listen for status updates about what page everyone's on
         getCurrentPage((c) => {
+            console.log("getting current page!");
+            if (this.currentPageFunc === undefined) {
+                this.currentPageFunc = c;
             // If waiting in preStartGame and change to gamePage, go2GamePage
-            if (this.currentPageFunc === this.go2PresStartGamePage && c === this.go2GamePage) {
+            } else if (this.currentPageFunc === this.go2PresStartGamePage && c === this.go2GamePage) {
                 c();
             // If in gamePage and kicked, go2PreStartGamePage
-            } else if (currentPageFunc === this.go2GamePage && c === this.go2PreStartGamePage) {
+            } else if (this.currentPageFunc === this.go2GamePage && c === this.go2PreStartGamePage) {
                 c();
-            }
+            };
         });
     };
 
