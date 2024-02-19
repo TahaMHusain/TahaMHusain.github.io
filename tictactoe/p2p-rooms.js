@@ -70,6 +70,7 @@ function Player(
         // Request the masterPeerDict from host
         console.log("Waiting for masterPeerDict...")
         const requestMasterDict = this._room.makeAction("reqMPD")[0];
+        // TODO: Make this actually wait for a promise to resolve!
         await requestMasterDict("reqMPD");
         await this._delay(500);
         console.log("received masterPeerDict! in _foundHostFunc!" + this.masterPeerDict)
