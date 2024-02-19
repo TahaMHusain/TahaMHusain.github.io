@@ -2,6 +2,7 @@
 
 import {joinRoom, selfId} from '../trystero-torrent.min.js';
 import {Player} from "./p2p-rooms.js";
+import {HTMLTempls} from "./html_templates.js";
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
 const id2player = {0: "X", 1: "O"};
@@ -21,7 +22,9 @@ let numPlayers = 1;
 
 const container = document.getElementById("container");
 const contentBottom = document.getElementById("content-bottom");
-
+const config = {"appId": "tictactoe_test"};
+const MAX_PLAYERS = 2;
+const MIN_PLAYERS = 2;
 
 const winningMessage = () => `Player ${currentPlayer} has won!`;
 const drawMessage = () => `Game ended in a draw!`;
@@ -60,9 +63,9 @@ function handlePlayerChange() {
 
 function handleResultValidation() {
     let roundWon = false;
-    for(let i = 0; i <= 7; i++) {// Send updated master list to all peers
+    for(let i = 0; i <= 7; i++) {
+        // Send updated master list to all peers
         room.makeAction("masterDict")[0](masterPeerDict);
-        }
     }
 
     if(roundWon) {
@@ -215,39 +218,31 @@ async function waitingRoom(roomJoinQueryString, MIN_PLAYERS) {
 }
 
 function startup() {
+    console.log("Running startup func!")
     const queryString = window.location.search;
     if (queryString.length > 1) {
+        console.log("Found query string!")
         const urlParams = new URLSearchParams(queryString);
         let player = new Player(
-            config=config,
-            roomCode=urlParams.get("roomCode"),
-            hostId=urlParams.get("hostId"),
-            MAX_PLAYERS=MAX_PLAYERS,
-            MIN_PLYERS=MIN_PLAYERS
+            config,
+            undefined,
+            document.getElementById("content"),
+            HTMLTempls,
+            MAX_PLAYERS,
+            MIN_PLAYERS,
+            urlParams.get("roomCode"),
+            urlParams.get("hostId")
         );
+    } else {
+        let player = new Player(
+            config,
+            undefined,
+            document.getElementById("content"),
+            HTMLTempls,
+            MAX_PLAYERS,
+            MIN_PLAYERS
+        )
     };
-    
-    const createRoomButton = document.createElement("span");
-    createRoomButton.innerHTML = `
-        <button className=startup id=create-room-button>Create Room</button>
-    `
-    const container = document.getElementById("container");
-    container.appendChild(createRoomButton);
-    // container.insertBefore(createRoomButton, contentBottom);
-    createRoomButton.addEventListener('click', () => {
-        const [isCreated, roomJoinQueryString] = createRoom(config);
-        if (!isCreated) {
-            //TODO: better error handling
-            console.log("room not joined");
-        } else {
-            waitingRoom(roomJoinQueryString, MIN_PLAYERS);
-        }
-    });
-
-
-
-    
-
 }
 
 function leaveGame() {

@@ -2,34 +2,27 @@ import {joinRoom, selfId} from '../trystero-torrent.min.js';
 
 function Player(
     config,
-    roomCode,
-    hostId,
     name,
-    go2PreCreateRoomPage,
-    go2PreStartGamePage,
-    go2PreJoinRoomPage,
-    go2PreJoinGamePage,
-    go2GamePage,
+    content_el,
+    templs,
     MAX_PLAYERS,
     MIN_PLAYERS = 0,
+    roomCode = undefined,
+    hostId = undefined,
 ) {
     // Variable Declarations
     this.config = config;
     this.MIN_PLAYERS = MIN_PLAYERS;
     this.MAX_PLAYERS = MAX_PLAYERS;
     this.roomCode = roomCode;
+    this.hostId = hostId;
     this.name = name;
-    this.joinRoomPage = joinRoomPage;
     this.masterPeerDict = undefined;
-    this.roomJoinQueryString = undefined;
     this._room = undefined;
 
     this.currentPageFunc = undefined;
-    this.go2PreCreateRoomPage = go2PreCreateRoomPage;
-    this.go2PreStartGamePage = go2PreStartGamePage;
-    this.go2PreJoinRoomPage = go2PreJoinRoomPage;
-    this.go2PreJoinGamePage = go2PreJoinGamePage;
-    this.go2GamePage = go2GamePage;
+    this.content_el = content_el;
+    this.templs = templs;
     /**
      * Function to delay execution
      * @param {number} ms   milliseconds of delay
@@ -41,14 +34,14 @@ function Player(
      * @param {string} hostId       peer id of room host
      */
     this._joinCreatedRoom = async (hostId) => {
+        console.log("In _joinCreatedRoom!")
         this._room = joinRoom(this.config, this.roomCode);
+        console.log("Joined room " + roomCode + " with host " + hostId);
         const joinTime = Date.now();
         this._startClientListeners();
     
-        // Create func for sending join time
-        const sendJoinTime = this._room.makeAction("joinTime")[0];
         // Check if host is in room yet
-        let foundHost = Object.keys(room.getPeers()).includes(hostId);
+        let foundHost = Object.keys(this._room.getPeers()).includes(hostId);
         // Set 1m timeout on finding host
         let hostJoinTimeout = setTimeout(
             () => {
@@ -59,15 +52,27 @@ function Player(
             60000
         );
         // Keep checking until the host is found
-        while (!foundHost) {
-            peerList = Object.keys(this._room.getPeers());
-            foundHost = peerList.includes(hostId);
-        };
-        clearTimeout(hostJoinTimeout);
-    
+        console.log("Looking for host...")
+        this._room.onPeerJoin(peerId => {
+            console.log(`${peerId} joined`);
+            if (peerId === hostId) {
+                clearTimeout(hostJoinTimeout);
+                this._foundHostFunc(joinTime, hostId);
+            }
+        });
+    };
+
+    this._foundHostFunc = async (joinTime, hostId) => {
+        console.log("Found host!")
+        this._room.onPeerJoin(peerId => {
+            console.log(`${peerId} joined`);
+        });
         // Request the masterPeerDict from host
+        console.log("Waiting for masterPeerDict...")
         const requestMasterDict = this._room.makeAction("reqMPD")[0];
         await requestMasterDict("reqMPD");
+        await this._delay(500);
+        console.log("received masterPeerDict! in _foundHostFunc!" + this.masterPeerDict)
 
         /** Not necessary if await works on WebRTC requests
         // Wait until masterPeerDict is sent over
@@ -83,13 +88,15 @@ function Player(
                         ": room is full!")
             return;
         }
+        // Create func for sending join time
+        const sendJoinTime = this._room.makeAction("joinTime")[0];
         // Send the join time to the host
         sendJoinTime(joinTime, hostId);
 
         // Determine what page the host is on and go to that page
-        this.currentPageFunc = await this._room.makeAction("reqPage")[0]();
+        this.currentPageFunc = await this._room.makeAction("reqPage")[0]("reqPage");
         this.currentPageFunc();
-    };
+    }
 
     /**
      * Creates (& joins) a new room
@@ -118,6 +125,10 @@ function Player(
         clearTimeout(createRoomTimeout);
         // Record join time
         let joinTime = Date.now();
+        // Log when someone joins the room
+        this._room.onPeerJoin(peerId => {
+            console.log(`${peerId} joined`);
+        })
 
         // Keep master object of peers in room as global var
         this.masterPeerDict = {[selfId]: {
@@ -193,14 +204,16 @@ function Player(
             // Send updated master list to all peers
             this._room.makeAction("MPD")[0](this.masterPeerDict);
             // If in preStartGamePage, check if game should start
-            if (Object.keys(this.masterPeerDict).length >= this.MIN_PLAYERS) {
-
+            if (Object.keys(this.masterPeerDict).length >= this.MIN_PLAYERS && this.currentPageFunc === this.go2PreStartGamePage) {
+                this.go2GamePage();
+                this._room.makeAction("curPage")[0](this.go2GamePage);
             }
         });
 
         const getRequestForCurrentPage = this._room.makeAction("reqPage")[1];
         // Listen for requests for information about which page everyone is on
         getRequestForCurrentPage(() => {
+            // Send everyone the current page
             this._room.makeAction("curPage")[0](this.currentPageFunc);
         });
 
@@ -212,8 +225,9 @@ function Player(
             // If there aren't enough players to keep playing, send everyone
             // back to the preStartGamePage
             if (Object.keys(this.masterPeerDict).length < this.MIN_PLAYERS) {
-                this._room.makeAction("kicked")[0]();
-                this.preStartGamePage();
+                this.currentPageFunc = this.go2PreStartGamePage;
+                this._room.makeAction("curPage")[0](this.currentPageFunc);
+                this.currentPageFunc();
             };
         });
     };
@@ -225,6 +239,7 @@ function Player(
         const getMasterDict = this._room.makeAction("MPD")[1];
         // Listen for the host sending updates to masterPeerDict
         getMasterDict(m => {
+            console.log("received MasterPeerDict in MPD action! " + m);
             this.masterPeerDict = m;
         });
 
@@ -234,16 +249,16 @@ function Player(
             this._promoteToHost();
         });
 
-        const getKickedOutOfGame = this._room.makeAction("kicked")[1];
-        // Listen for host telling user to go back to waiting room
-        getKickedOutOfGame(() => {
-            this.preStartGamePage();
-        });
-
         const getCurrentPage = this._room.makeAction("curPage")[1];
         // Listen for status updates about what page everyone's on
         getCurrentPage((c) => {
-            this.currentPageFunc = c;
+            // If waiting in preStartGame and change to gamePage, go2GamePage
+            if (this.currentPageFunc === this.go2PresStartGamePage && c === this.go2GamePage) {
+                c();
+            // If in gamePage and kicked, go2PreStartGamePage
+            } else if (currentPageFunc === this.go2GamePage && c === this.go2PreStartGamePage) {
+                c();
+            }
         });
     };
 
@@ -252,8 +267,39 @@ function Player(
         this._startHostListeners();
     };
 
+    /**
+     * Page transition functions
+     */
+    this.go2PreCreateRoomPage = function () {
+        console.log("going to preCreateRoomPage!")
+        this.currentPageFunc = this.go2PreCreateRoomPage;
+        this.content_el.innerHTML = this.templs.preCreateRoomPage;
+        const createRoomButton = document.getElementById("create-room-button");
+        createRoomButton.addEventListener('click', () => {
+            this._createRoom();
+        });
+    };
+    this.go2PreStartGamePage = function () {
+        this.currentPageFunc = this.go2PreStartGamePage;
+        this.content_el.innerHTML = this.templs.preStartGamePage;
+        const roomLinkMsg = document.getElementById("room-link");
+        roomLinkMsg.innerHTML = "<p> " + window.location.href + "?" + this.roomJoinQueryString + "</p>";
+    };
+    this.go2PreJoinRoomPage = function () {
+        this.currentPageFunc = this.go2PreJoinRoomPage;
+        this.content_el.innerHTML = this.templs.preJoinRoomPage;
+    };
+    this.go2PreJoinGamePage = function () {
+        this.currentPageFunc = this.go2PreJoinGamePage;
+        this.content_el.innerHTML = this.templs.preJoinGamePage;
+    };
+    this.go2GamePage = function () {
+        this.currentPageFunc = this.go2GamePage;
+        this.content_el.innerHTML = this.templs.gamePage;
+    };
+
     // Object initialization
-    this.roomCode === undefined ? this._createRoom() : this._joinCreatedRoom(hostId);
+    this.roomCode === undefined ? this.go2PreCreateRoomPage() : this._joinCreatedRoom(hostId);
 };
 
 export {Player};
