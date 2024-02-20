@@ -1,5 +1,5 @@
 import {joinRoom, selfId} from '../trystero-torrent.min.js';
-
+// TODO: Replace currentPageFunc with object mapping strings to functions!
 function Player(
     config,
     name,
@@ -233,16 +233,18 @@ function Player(
             // If in preStartGamePage, check if game should start
             if (Object.keys(this.masterPeerDict).length >= this.MIN_PLAYERS && this.currentPageFunc === this.go2PreStartGamePage) {
                 this.go2GamePage();
-                this._room.makeAction("curPage")[0](this.go2GamePage);
+                // this._room.makeAction("curPage")[0]({prop: this.go2GamePage});
             }
         });
 
         const getRequestForCurrentPage = this._room.makeAction("reqPage")[1];
         // Listen for requests for information about which page everyone is on
-        getRequestForCurrentPage(() => {
+        getRequestForCurrentPage((e) => {
             // Send everyone the current page
-            console.log("sending current page from host!");
-            this._room.makeAction("curPage")[0](this.currentPageFunc);
+            let c_obj = {prop: this.currentPageFunc};
+            console.log("sending current page from host: " + c_obj);
+            console.log("    including func at prop: " + c_obj.prop);
+            this._room.makeAction("curPage")[0](c_obj);
         });
 
         // Listen for peers leaving to update list and send out updated MPD
@@ -254,7 +256,7 @@ function Player(
             // back to the preStartGamePage
             if (Object.keys(this.masterPeerDict).length < this.MIN_PLAYERS) {
                 this.currentPageFunc = this.go2PreStartGamePage;
-                this._room.makeAction("curPage")[0](this.currentPageFunc);
+                // this._room.makeAction("curPage")[0]({prop: this.currentPageFunc});
                 this.currentPageFunc();
             };
         });
@@ -279,9 +281,13 @@ function Player(
 
         const getCurrentPage = this._room.makeAction("curPage")[1];
         // Listen for status updates about what page everyone's on
-        getCurrentPage((c) => {
+        getCurrentPage(c_obj => {
+            console.log("Received c_obj: " + c_obj);
+            console.log("    including func at prop: " + c_obj.prop);
+            let c = c_obj.prop;
             console.log("getting current page!");
             if (this.currentPageFunc === undefined) {
+                console.log("setting new currentPageFunc " + c);
                 this.currentPageFunc = c;
             // If waiting in preStartGame and change to gamePage, go2GamePage
             } else if (this.currentPageFunc === this.go2PresStartGamePage && c === this.go2GamePage) {
@@ -311,6 +317,7 @@ function Player(
         });
     };
     this.go2PreStartGamePage = function () {
+        console.log("setting currentPageFunc to go2PreStartGamePage...");
         this.currentPageFunc = this.go2PreStartGamePage;
         this.content_el.innerHTML = this.templs.preStartGamePage;
         const roomLinkMsg = document.getElementById("room-link");
