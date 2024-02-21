@@ -16,7 +16,6 @@ let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
 let playerPosition;
-let awaitingPlayers = false;
 let sendResultValidation;
 let sendCellPlayed;
 let sendRestartGame;
@@ -24,8 +23,6 @@ let statusDisplay;
 let room;
 let masterPeerDict;
 
-const container = document.getElementById("container");
-const contentBottom = document.getElementById("content-bottom");
 const config = {"appId": "tictactoe_test"};
 const MAX_PLAYERS = 2;
 const MIN_PLAYERS = 2;
