@@ -4,7 +4,11 @@ import {joinRoom, selfId} from '../trystero-torrent.min.js';
 import {Player} from "./p2p-rooms.js";
 import {HTMLTempls} from "./html_templates.js";
 
-const delay = ms => new Promise(res => setTimeout(res, ms));
+/**
+ * TODO:
+ *  - Replace global variables with something more systematic
+ */
+
 const id2player = {0: "X", 1: "O"};
 
 let gameActive = true;
@@ -63,6 +67,19 @@ function handlePlayerChange() {
 
 function handleResultValidation() {
     let roundWon = false;
+
+    for(let i = 0; i <= 7; i++) {
+        const winCondition = winningConditions[i];
+        const a = gameState[winCondition[0]];
+        const b = gameState[winCondition[1]];
+        const c = gameState[winCondition[2]];
+        if(a === '' || b === '' || c === '')
+            continue;
+        if(a === b && b === c) {
+            roundWon = true;
+            break
+        }
+    }
 
     if(roundWon) {
         statusDisplay.innerHTML = winningMessage();
