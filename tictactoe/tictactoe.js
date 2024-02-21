@@ -11,14 +11,14 @@ let gameActive = true;
 let currentPlayer = "X";
 let gameState = ["", "", "", "", "", "", "", "", ""];
 
-let playerID;
+let playerPosition;
 let awaitingPlayers = false;
 let sendResultValidation;
 let sendCellPlayed;
 let sendRestartGame;
 let statusDisplay;
-
-let numPlayers = 1;
+let room;
+let masterPeerDict;
 
 const container = document.getElementById("container");
 const contentBottom = document.getElementById("content-bottom");
@@ -63,10 +63,6 @@ function handlePlayerChange() {
 
 function handleResultValidation() {
     let roundWon = false;
-    for(let i = 0; i <= 7; i++) {
-        // Send updated master list to all peers
-        room.makeAction("masterDict")[0](masterPeerDict);
-    }
 
     if(roundWon) {
         statusDisplay.innerHTML = winningMessage();
@@ -88,15 +84,13 @@ function handleCellClick(clickedCellEvent) {
     const clickedCell = clickedCellEvent.target;
     const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
 
-    if(gameState[clickedCellIndex] !== "" || currentPlayer !== id2player[playerID] || !gameActive)
+    if(gameState[clickedCellIndex] !== "" || currentPlayer !== id2player[playerPosition] || !gameActive)
         return;
 
     handleCellPlayed(clickedCell, clickedCellIndex);
     handleResultValidation();
-    if (numPlayers > 1) {
-        sendCellPlayed(clickedCellIndex);
-        sendResultValidation("resultV");
-    }
+    sendCellPlayed(clickedCellIndex);
+    sendResultValidation("resultV");
     
 }
 
@@ -110,120 +104,17 @@ function handleRestartGame() {
 
 function handleRestartClick() {
     handleRestartGame();
-    if (numPlayers > 1) {
-        sendRestartGame("restartGame");
-    }
+    sendRestartGame("restartGame");
 }
 
-async function checkRoom(roomCodeToTry) {
-    console.log("Attempting to join room " + roomCodeToTry + "...")
-    room = joinRoom(config, roomCodeToTry);
-
-    const joiningRoomMsg = document.createElement("span");
-    joiningRoomMsg.innerHTML = "<p>Joining room " + roomCodeToTry + "...</p>"
-    joiningRoomMsg.id = "joining-room-msg";
-    joiningRoomMsg.className = "game--status";
-    container.appendChild(joiningRoomMsg);
-
-    const createRoomButton = document.getElementById("create-room-button");
-    container.insertBefore(joiningRoomMsg, createRoomButton);
-
-    room.onPeerJoin(peerId => {
-        console.log(`${peerId} joined`);
-        numPlayers += 1;
-        if (awaitingPlayers && numPlayers >= MIN_PLAYERS) {
-            if (document.contains(document.getElementById("await-players-msg"))) {
-                document.getElementById("await-players-msg").remove();
-            };
-            startGame();
-        }
-    });
-    room.onPeerLeave(peerId => {
-        console.log(`${peerId} left`);
-        numPlayers -= 1;
-    });
-    // Ensure time for all connections by sleeping
-    await delay(5000);
-    joiningRoomMsg.remove();
-
-    let peersList = Object.keys(room.getPeers());
-    if (peersList.length + 1 > MAX_PLAYERS) {
-        console.log("Room "+ roomCodeToTry +" full! Exiting");
-        room.leave()
-        return false;
-    }
-
-    console.log("Joined room " + roomCodeToTry);
-
-    roomCode = roomCodeToTry;
-
-
-    return true;
-}
-
-async function joinRoomFunc(roomCodeToTry) {
-    console.log("In joinRoomFunc")
-    let isJoined = await checkRoom(roomCodeToTry);
-    
-    if (isJoined) {
-        if (document.contains(document.getElementById("room-full-msg"))) {
-            document.getElementById("room-full-msg").remove();
-        };
-        if (numPlayers < MIN_PLAYERS) {
-            const awaitPlayersMsg = document.createElement("span");
-            awaitPlayersMsg.innerHTML = "<p>Joined room " + roomCodeToTry + "! Waiting for other players...</p>";
-            awaitPlayersMsg.id = "await-players-msg";
-            container.appendChild(awaitPlayersMsg);
-            awaitingPlayers = true;
-        } else {
-            if (document.contains(document.getElementById("await-players-msg"))) {
-                document.getElementById("await-players-msg").remove();
-            };
-            awaitingPlayers = false;
-            startGame();
-        } 
-    } else {
-        const roomFullMsg = document.createElement("span");
-        roomFullMsg.innerHTML = "<p>Room " + roomCodeToTry + " is full! Try another code</p>"
-        roomFullMsg.id = "room-full-msg";
-        container.appendChild(roomFullMsg);
-
-        const createRoomButton = document.getElementById("create-room-button");
-        container.insertBefore(roomFullMsg, createRoomButton);
-    }
-}
-
-async function waitingRoom(roomJoinQueryString, MIN_PLAYERS) {
-    console.log("In waiting room...")
-    const awaitPlayersMsg = document.createElement("span");
-    awaitPlayersMsg.innerHTML = "<p>Joined room! Waiting for other players...</p> <br>";
-    awaitPlayersMsg.id = "await-players-msg";
-    const createRoomButton = document.getElementById("create-room-button");
-    container.insertBefore(awaitPlayersMsg, createRoomButton);
-
-    const roomLinkMsg = document.createElement("span");
-    roomLinkMsg.innerHTML = "<p> Link to room: </p> <p>" + window.location.href + roomJoinQueryString + "</p>";
-    roomLinkMsg.id = "room-link-msg";
-    container.insertBefore(roomLinkMsg, createRoomButton);
-
-    room.onPeerJoin(peerId => {
-        if (Object.keys(room.getPeers()).length + 1 > MIN_PLAYERS) {
-            startGame();
-        }
-    })
-
-
-    awaitingPlayers = true;
-    
-}
-
-function startup() {
+async function startup() {
     console.log("Running startup func!")
     const queryString = window.location.search;
+    let player;
     if (queryString.length > 1) {
         console.log("Found query string!")
         const urlParams = new URLSearchParams(queryString);
-        let player = new Player(
+        player = new Player(
             config,
             undefined,
             document.getElementById("content"),
@@ -234,7 +125,7 @@ function startup() {
             urlParams.get("hostId")
         );
     } else {
-        let player = new Player(
+        player = new Player(
             config,
             undefined,
             document.getElementById("content"),
@@ -243,6 +134,23 @@ function startup() {
             MIN_PLAYERS
         )
     };
+
+    // Function that returns a promise that resolves when the variable changes
+    const waitForGameStart = () => {
+        return new Promise((resolve) => {
+            const checkVariable = () => {
+                if ((player.currentPage === "gamePage") && (!(document.getElementById("leave-room") === null))) {
+                    resolve();
+                } else {
+                    setTimeout(checkVariable, 100);
+                };
+            };
+
+            checkVariable();
+        });
+    };
+    await waitForGameStart();
+    startGame(player);
 }
 
 function leaveGame() {
@@ -251,77 +159,41 @@ function leaveGame() {
     startup();
 }
 
-function startGame() {
+function startGame(player) {
+    room = player._room;
+    masterPeerDict = player.masterPeerDict;
     console.log("Starting game...")
 
     // Assign player order by alphabetical order of selfId
-    let playerList = Object.keys(room.getPeers());
-    playerList.push(selfId);
-    playerList.sort();
-    playerID = playerList.indexOf(selfId);
-
-    document.querySelectorAll('.startup').forEach(e => e.remove());
-
-    const roomCodeText = document.createTextNode("Room code: " + roomCode);
-    roomCodeText.className = "game";
-    container.appendChild(roomCodeText);
-    container.insertBefore(roomCodeText, contentBottom);
-
-    const roomCodeHeader = document.createElement("span");
-    roomCodeHeader.innerHTML = `
-    <br>
-    <button id="leave-room">Leave Room</button>
-    <br>
-    <br>
-    `
-    roomCodeHeader.className = "game";
-    container.appendChild(roomCodeHeader);
-    container.insertBefore(roomCodeHeader, contentBottom);
-
-    const gameHTML = document.createElement("span");
-    gameHTML.innerHTML = `
-    <section>
-        <h2 id="this-player-msg" class="game--status"></h2>
-        <div class="game--container">
-            <div data-cell-index="0" class="cell"></div>
-            <div data-cell-index="1" class="cell"></div>
-            <div data-cell-index="2" class="cell"></div>
-            <div data-cell-index="3" class="cell"></div>
-            <div data-cell-index="4" class="cell"></div>
-            <div data-cell-index="5" class="cell"></div>
-            <div data-cell-index="6" class="cell"></div>
-            <div data-cell-index="7" class="cell"></div>
-            <div data-cell-index="8" class="cell"></div>
-        </div>
-        <h2 id="current-player-msg" class="game--status"></h2>
-        <button class="game--restart">Restart Game</button>
-    </section>
-    `
-    gameHTML.className = "game";
-    container.appendChild(gameHTML);
-    container.insertBefore(gameHTML, contentBottom);
+    let m = player.masterPeerDict;
+    let selfObj = m[selfId];
+    let playerList = Object.values(m).sort((a, b) => a["joinTime"] - b["joinTime"]).map(e => JSON.stringify(e));
+    playerPosition = playerList.indexOf(JSON.stringify(selfObj));
 
     const leaveRoomButton = document.getElementById("leave-room");
+    console.log("Found leaveRoomButton? : " + leaveRoomButton);
     leaveRoomButton.addEventListener('click', leaveGame);
-
-    document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
-    document.querySelector('.game--restart').addEventListener('click', handleRestartClick);
-
-    let thisPlayer = document.getElementById("this-player-msg");
-    thisPlayer.innerHTML = "You're playing as " + id2player[playerID];
-
-    statusDisplay = document.getElementById("current-player-msg");
-    statusDisplay.innerHTML = currentPlayerTurn();
 
     let getCellPlayed;
     let getResultValidation;
     let getRestartGame;
 
-    [sendCellPlayed, getCellPlayed] = room.makeAction("cellPlayed");
-    [sendResultValidation, getResultValidation] = room.makeAction("resultV");
-    [sendRestartGame, getRestartGame] = room.makeAction("restartGame");
+    [sendCellPlayed, getCellPlayed] = player._room.makeAction("cellPlayed");
+    [sendResultValidation, getResultValidation] = player._room.makeAction("resultV");
+    [sendRestartGame, getRestartGame] = player._room.makeAction("restartGame");
 
     getCellPlayed(handleCellPlayedPeer);
     getResultValidation(handleResultValidation);
     getRestartGame(handleRestartGame);
+
+    document.querySelectorAll('.cell').forEach(cell => cell.addEventListener('click', handleCellClick));
+    document.querySelector('.game--restart').addEventListener('click', handleRestartClick);
+
+    let thisPlayer = document.getElementById("this-player-msg");
+    thisPlayer.innerHTML = "You're playing as " + id2player[playerPosition];
+
+    statusDisplay = document.getElementById("current-player-msg");
+    statusDisplay.innerHTML = currentPlayerTurn();
+
+
 }

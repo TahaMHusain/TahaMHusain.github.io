@@ -1,5 +1,4 @@
 import {joinRoom, selfId} from '../trystero-torrent.min.js';
-// TODO: Replace currentPageFunc with object mapping strings to functions!
 function Player(
     config,
     name,
@@ -20,7 +19,20 @@ function Player(
     this.masterPeerDict = undefined;
     this._room = undefined;
 
-    this.currentPageFunc = undefined;
+    this.currentPage = undefined;
+    this.page2func = function (pageName) {
+        if (pageName === "preCreateRoomPage") {
+            this.go2PreCreateRoomPage();
+        } else if (pageName === "preStartGamePage") {
+            this.go2PreStartGamePage();
+        } else if (pageName === "preJoinRoomPage") {
+            this.preJoinRoomPage();
+        } else if (pageName === "preJoinGamePage") {
+            this.go2PreJoinGamePage();
+        } else if (pageName === "gamePage") {
+            this.go2GamePage();
+        };
+    };
     this.content_el = content_el;
     this.templs = templs;
     /**
@@ -109,8 +121,8 @@ function Player(
         const waitForCurPage = () => {
             return new Promise((resolve) => {
                 const checkVariable = () => {
-                    if (this.currentPageFunc === undefined) {
-                        console.log("currentPageFunc not found yet! " + this.currentPageFunc);
+                    if (this.currentPage === undefined) {
+                        console.log("currentPage not found yet! " + this.currentPage);
                         // If not changed, wait for a short duration and check again
                         setTimeout(checkVariable, 1000);
                     } else {
@@ -122,7 +134,8 @@ function Player(
             });
         };
         await waitForCurPage();
-        this.currentPageFunc();
+        console.log("in _joinCreatedRoom, going to page " + this.currentPage);
+        this.page2func(this.currentPage);
     }
 
     /**
@@ -182,7 +195,7 @@ function Player(
     this._leaveRoomHost = () => {
         // If there's only one peer in the room, just empty the peer dict and leave
         if (Object.keys(this.masterPeerDict).length < 2) {
-            masterPeerDict = undefined
+            this.masterPeerDict = undefined
             return;
         };
         // Remove own entry from peer dict
@@ -231,9 +244,9 @@ function Player(
             // Send updated master list to all peers
             this._room.makeAction("MPD")[0](this.masterPeerDict);
             // If in preStartGamePage, check if game should start
-            if (Object.keys(this.masterPeerDict).length >= this.MIN_PLAYERS && this.currentPageFunc === this.go2PreStartGamePage) {
+            if (Object.keys(this.masterPeerDict).length >= this.MIN_PLAYERS && this.currentPage === "preStartGamePage") {
                 this.go2GamePage();
-                // this._room.makeAction("curPage")[0]({prop: this.go2GamePage});
+                this._room.makeAction("curPage")[0]("gamePage");
             }
         });
 
@@ -241,10 +254,7 @@ function Player(
         // Listen for requests for information about which page everyone is on
         getRequestForCurrentPage((e) => {
             // Send everyone the current page
-            let c_obj = {prop: this.currentPageFunc};
-            console.log("sending current page from host: " + c_obj);
-            console.log("    including func at prop: " + c_obj.prop);
-            this._room.makeAction("curPage")[0](c_obj);
+            this._room.makeAction("curPage")[0](this.currentPage);
         });
 
         // Listen for peers leaving to update list and send out updated MPD
@@ -255,9 +265,9 @@ function Player(
             // If there aren't enough players to keep playing, send everyone
             // back to the preStartGamePage
             if (Object.keys(this.masterPeerDict).length < this.MIN_PLAYERS) {
-                this.currentPageFunc = this.go2PreStartGamePage;
-                // this._room.makeAction("curPage")[0]({prop: this.currentPageFunc});
-                this.currentPageFunc();
+                this.currentPage = "preStartGamePage";
+                this._room.makeAction("curPage")[0]("preStartGamePage");
+                this.page2func("preStartGamePage");
             };
         });
     };
@@ -281,20 +291,17 @@ function Player(
 
         const getCurrentPage = this._room.makeAction("curPage")[1];
         // Listen for status updates about what page everyone's on
-        getCurrentPage(c_obj => {
-            console.log("Received c_obj: " + c_obj);
-            console.log("    including func at prop: " + c_obj.prop);
-            let c = c_obj.prop;
+        getCurrentPage(c => {
             console.log("getting current page!");
-            if (this.currentPageFunc === undefined) {
-                console.log("setting new currentPageFunc " + c);
-                this.currentPageFunc = c;
+            if (this.currentPage === undefined) {
+                console.log("setting new currentPage " + c);
+                this.currentPage = c;
             // If waiting in preStartGame and change to gamePage, go2GamePage
-            } else if (this.currentPageFunc === this.go2PresStartGamePage && c === this.go2GamePage) {
-                c();
+            } else if (this.currentPage === "preStartGamePage" && c === "gamePage") {
+                this.page2func("gamePage");
             // If in gamePage and kicked, go2PreStartGamePage
-            } else if (this.currentPageFunc === this.go2GamePage && c === this.go2PreStartGamePage) {
-                c();
+            } else if (this.currentPage === "gamePage" && c === "preStartGamePage") {
+                this.page2func("preStartGamePage");
             };
         });
     };
@@ -309,7 +316,7 @@ function Player(
      */
     this.go2PreCreateRoomPage = function () {
         console.log("going to preCreateRoomPage!")
-        this.currentPageFunc = this.go2PreCreateRoomPage;
+        this.currentPage = "preCreateRoomPage";
         this.content_el.innerHTML = this.templs.preCreateRoomPage;
         const createRoomButton = document.getElementById("create-room-button");
         createRoomButton.addEventListener('click', () => {
@@ -317,22 +324,22 @@ function Player(
         });
     };
     this.go2PreStartGamePage = function () {
-        console.log("setting currentPageFunc to go2PreStartGamePage...");
-        this.currentPageFunc = this.go2PreStartGamePage;
+        console.log("setting currentPage to preStartGamePage...");
+        this.currentPage = "preStartGamePage";
         this.content_el.innerHTML = this.templs.preStartGamePage;
         const roomLinkMsg = document.getElementById("room-link");
         roomLinkMsg.innerHTML = "<p> " + window.location.href + "?" + this.roomJoinQueryString + "</p>";
     };
     this.go2PreJoinRoomPage = function () {
-        this.currentPageFunc = this.go2PreJoinRoomPage;
+        this.currentPage = "preJoinRoomPage";
         this.content_el.innerHTML = this.templs.preJoinRoomPage;
     };
     this.go2PreJoinGamePage = function () {
-        this.currentPageFunc = this.go2PreJoinGamePage;
+        this.currentPage = "preJoinGamePage";
         this.content_el.innerHTML = this.templs.preJoinGamePage;
     };
     this.go2GamePage = function () {
-        this.currentPageFunc = this.go2GamePage;
+        this.currentPage = "gamePage";
         this.content_el.innerHTML = this.templs.gamePage;
     };
 
