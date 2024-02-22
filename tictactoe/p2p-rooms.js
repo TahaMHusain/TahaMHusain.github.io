@@ -167,27 +167,37 @@ function Player(
      * Creates (& joins) a new room
      */
     this._createRoom = async () => {
-        // Initialize count to start while loop
-        let numPeers = 1;
-        // Set 1min timeout on creating empty room
-        let createRoomTimeout = setTimeout(
-            () => {
-                console.log("Failed to create room!");
-                return;
-            },
-            60000
-        );
-        // Repeat until an empty room is found
-        while (numPeers > 0) {
-            // Get random string for room code and join
+        // Whether to check if room is empty before "creating" it
+        // Unlikely to happen, and requires ~5 sec delay in room creation
+        const ensureEmptyRoom = false;
+
+        if (ensureEmptyRoom) {
+            // Initialize count to start while loop
+            let numPeers = 1;
+            // Set 1min timeout on creating empty room
+            let createRoomTimeout = setTimeout(
+                () => {
+                    console.log("Failed to create room!");
+                    return;
+                },
+                60000
+            );
+            // Repeat until an empty room is found
+            while (numPeers > 0) {
+                // Get random string for room code and join
+                this.roomCode = (Math.random() + 1).toString(36).substring(7);
+                this._room = joinRoom(this.config, this.roomCode);
+                // 5s delay to find all peers in room
+                await this._delay(5000);
+                // Find number of peers in room
+                numPeers = Object.keys(this._room.getPeers()).length;
+            };
+            clearTimeout(createRoomTimeout);
+        } else {
             this.roomCode = (Math.random() + 1).toString(36).substring(7);
             this._room = joinRoom(this.config, this.roomCode);
-            // 5s delay to find all peers in room
-            await this._delay(5000);
-            // Find number of peers in room
-            numPeers = Object.keys(this._room.getPeers()).length;
-        };
-        clearTimeout(createRoomTimeout);
+        }
+
         // Record join time
         let joinTime = Date.now();
         // Log when someone joins the room
