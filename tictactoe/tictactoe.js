@@ -153,6 +153,7 @@ async function startup() {
     const waitForGameStart = () => {
         return new Promise((resolve) => {
             const checkVariable = () => {
+                // Check if both in game and game HTML has loaded
                 if ((player.currentPage === "gamePage") && (!(document.getElementById("leave-room") === null))) {
                     resolve();
                 } else {

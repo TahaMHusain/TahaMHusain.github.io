@@ -3,19 +3,26 @@ import {joinRoom, selfId} from '../trystero-torrent.min.js';
 /**
  * TODO:
  *  - End 5 second delay on room creation
+ *  - Replace all the "check variable" promises with actual promises
  *  - If host leaves (via closing window), get a client to promote
  *  - Let players select a name and display it
  */
 /**
+ * Constructor of the Player class
  * 
- * @param {*} config 
- * @param {*} name 
- * @param {*} content_el 
- * @param {*} templs 
- * @param {*} MAX_PLAYERS 
- * @param {*} MIN_PLAYERS 
- * @param {*} roomCode 
- * @param {*} hostId 
+ * creates a new Player and runs either
+ * _createRoom or _joinCreatedRoom,
+ * depending on whether roomCode is
+ * specified
+ * 
+ * @param {Object} config 
+ * @param {String} name 
+ * @param {Element} content_el 
+ * @param {Object} templs 
+ * @param {Number} MAX_PLAYERS 
+ * @param {Number} MIN_PLAYERS 
+ * @param {String} roomCode 
+ * @param {String} hostId 
  */
 function Player(
     config,
