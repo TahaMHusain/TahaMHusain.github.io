@@ -2,11 +2,217 @@ import {joinRoom, selfId} from '../trystero-torrent.min.js';
 
 /**
  * TODO:
- *  - End 5 second delay on room creation
+ *  - Let players select a name and display it
+ *  - Rewrite Player as custom type (with JSDoc annotations)
  *  - Replace all the "check variable" promises with actual promises
  *  - If host leaves (via closing window), get a client to promote
- *  - Let players select a name and display it
  */
+
+/**
+ * Info about app
+ *  - param of joinRoom 
+ * @typedef {Object} AppConfig
+ * @property {String} appId - name of application
+ */
+
+/**
+ * Static HTML templates for game pages
+ * @typedef {Object} HTMLTemplates
+ * @property {String} preCreateRoomPage
+ * @property {String} preJoinGamePage
+ * @property {String} preJoinRoomPage
+ * @property {String} preStartGamePage
+ * @property {String} gamePage 
+ */
+
+// TODO: Rename "PlayerStruct" to "Player" when finished
+/**
+ * Information about a player in the room
+ * @typedef {Object} PlayerStruct
+ * @property {String} id - peerId of Player
+ * @property {Number} joinTime - time player joined room
+ * @property {Boolean} isHost - whether or not the player is the host
+ * @property {String} name - self-chosen name of player
+ */
+
+/**
+ * Information about the room a player is in
+ * @typedef {Object} GameRoom
+ * @property {Function} makeAction - creates 3-array of actions - send, get, onProgress
+ * @property {Function} leave - leaves the room
+ * @property {Function} getPeers - return object of peers in room (keys are peerIds)
+ * @property {Function} onPeerJoin - callback for peer joining room
+ * @property {Function} onPeerLeave - callbcak for peer leaving room
+ * @property {AppConfig} config - Info about app (req'd by joinRoom)
+ * @property {String} roomCode - identifier for room 
+ * @property {String} hostId - peerId of host
+ * @property {PlayerStruct[]} playerList - list of all players in room indexed by join order (first player to join room is index 0, etc.)
+ * @property {Number} MAX_PLAYERS - maximum number of players allowed in room
+ * @property {Number} MIN_PLAYERS - minimum number of players allowed in room
+ */
+
+/**
+ * Joins a room that is already created
+ * @param {PlayerStruct} player - player to join room
+ * @param {AppConfig} config - config of room to join
+ * @param {String} roomCode - id of room to join
+ * @param {String} hostId - peerId of host of room to join
+ * @param {Number} MAX_PLAYERS - maximum number of players allowed in gameroom
+ * @param {Number} MIN_PLAYERS - minimum number of players allowed in gameroom
+ * @returns {GameRoom} room that was just joined
+ */ 
+async function joinCreatedRoom (player, config, roomCode, hostId, MAX_PLAYERS, MIN_PLAYERS) {
+    /** @type {GameRoom}*/
+    let room = joinRoom(config, roomCode);
+
+    room = {...room,
+        config: config,
+        roomCode: roomCode,
+        hostId: hostId,
+        playerList: undefined,
+        MAX_PLAYERS: MAX_PLAYERS,
+        MIN_PLAYERS: MIN_PLAYERS
+    }
+    console.log("Joined room " + roomCode + " with host " + hostId);
+    const joinTime = Date.now();
+    startClientListeners(player, room);
+
+    // Check if host is in room yet
+    let foundHost = Object.keys(room.getPeers()).includes(hostId);
+    // Set 1m timeout on finding host
+    let hostJoinTimeout = setTimeout(
+        () => {
+            console.log("Failed to join room " + roomCode +
+                        ": host not found");
+            return;
+        },
+        60000
+    );
+    // Keep checking until the host is found
+    console.log("Looking for host...")
+    // Function that returns a promise that resolves when the variable changes
+    const waitForHost =  new Promise((resolve) => {
+        const checkVariable = () => {
+            if (Object.keys(room.getPeers()).includes(hostId)) {
+                resolve();
+            } else {
+                console.log("MPD not found yet! " + this.masterPeerDict);
+                // If not changed, wait for a short duration and check again
+                setTimeout(checkVariable, 100);
+            };
+        };
+        checkVariable();
+    });
+    await waitForHost;
+    console.log("Found host!")
+    // Request the masterPeerDict from host
+    console.log("Waiting for masterPeerDict...")
+    // TODO: Make this actually wait for a promise to resolve!
+    room.makeAction("reqMPD")[0]("reqMPD");
+    // Function that returns a promise that resolves when the variable changes
+    const waitForMPD = new Promise((resolve) => {
+        const checkVariable = () => {
+            if (room.masterPeerDict === undefined) {
+                console.log("MPD not found yet! " + room.masterPeerDict);
+                // If not changed, wait for a short duration and check again
+                setTimeout(checkVariable, 100);
+            } else {
+                resolve();
+            };
+        };
+        checkVariable();
+    });
+    await waitForMPD();
+    console.log("received masterPeerDict in _foundHostFunc! " + room.masterPeerDict)
+
+    // If room is full, leave
+    if (Object.keys(room.masterPeerDict).length + 1 > room.MAX_PLAYERS) {
+        this._room.leave()
+        console.log("Failed to join room " + this.roomCode +
+                    ": room is full!")
+        return;
+    }
+    // Create func for sending join time
+    const sendJoinTime = this._room.makeAction("joinTime")[0];
+    // Send the join time to the host
+    sendJoinTime(joinTime, hostId);
+
+    let ret = {
+        room: room,
+        config: config,
+        roomCode: roomCode,
+        hostId: hostId,
+
+    }
+    return (room);
+};
+
+async function waitForCurPage () {
+    return new Promise((resolve) => {
+        (function checkVariable () {
+            if (this.currentPage === undefined) {
+                console.log("currentPage not found yet! " + this.currentPage);
+                // If not changed, wait for a short duration and check again
+                setTimeout(checkVariable, 100);
+            } else {
+                resolve();
+            };
+        })();
+    });
+};
+
+function setClientActions (player, room) {
+    const getMasterDict = room.makeAction("MPD")[1];
+    // Listen for the host sending updates to masterPeerDict
+    getMasterDict(m => {
+        console.log("received MasterPeerDict in MPD action! " + m);
+        this.masterPeerDict = m;
+    });
+
+    const getPromoteRequest = room.makeAction("promote")[1];
+    // Listen for host telling user to promote to host
+    getPromoteRequest(() => {
+        this._promoteToHost();
+    });
+
+    const getCurrentPage = room.makeAction("curPage")[1];
+    // Listen for status updates about what page everyone's on
+    getCurrentPage(c => {
+        console.log("getting current page!");
+        if (this.currentPage === undefined) {
+            console.log("setting new currentPage " + c);
+            this.currentPage = c;
+        // If waiting in preStartGame and change to gamePage, go2GamePage
+        } else if (this.currentPage === "preStartGamePage" && c === "gamePage") {
+            this.page2func("gamePage");
+        // If in gamePage and kicked, go2PreStartGamePage
+        } else if (this.currentPage === "gamePage" && c === "preStartGamePage") {
+            this.page2func("preStartGamePage");
+        };
+    });
+
+    // Technically not a listener - continuously check if host still here
+    // Function that returns a promise that resolves when the variable changes
+    const checkIfHostPresent = () => {
+        return new Promise((resolve) => {
+            const checkVariable = () => {
+                // Check if host is in room
+                let peerList = Object.keys(this._room.getPeers());
+                if (!(peerList.includes(this.hostId))) {
+                     
+                } else {
+                    setTimeout(checkVariable, 100);
+                };
+            };
+
+            checkVariable();
+        });
+    };
+    // await waitForGameStart();
+};
+
+
+
 /**
  * Constructor of the Player class
  * 
@@ -161,7 +367,7 @@ function Player(
         await waitForCurPage();
         console.log("in _joinCreatedRoom, going to page " + this.currentPage);
         this.page2func(this.currentPage);
-    }
+    };
 
     /**
      * Creates (& joins) a new room
@@ -339,6 +545,25 @@ function Player(
                 this.page2func("preStartGamePage");
             };
         });
+
+        // Technically not a listener - continuously check if host still here
+        // Function that returns a promise that resolves when the variable changes
+        const checkIfHostPresent = () => {
+            return new Promise((resolve) => {
+                const checkVariable = () => {
+                    // Check if host is in room
+                    let peerList = Object.keys(this._room.getPeers());
+                    if (!(peerList.includes(this.hostId))) {
+                         
+                    } else {
+                        setTimeout(checkVariable, 100);
+                    };
+                };
+
+                checkVariable();
+            });
+        };
+        // await waitForGameStart();
     };
 
     this._promoteToHost = () => {
