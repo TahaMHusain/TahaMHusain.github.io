@@ -71,6 +71,11 @@ function runClient (config, queryString, content_el) {
         console.log("Received token from " + peerId);
     });
 
+    /**
+     * Test how to stop a callback from listening
+     * (Answer: replace callback function with noOp)
+     */
+    
     const gettingTokens = document.getElementById("getting-tokens");
     gettingTokens.addEventListener('click', () => {
         let tokenGettingState = gettingTokens.innerHTML;
@@ -97,8 +102,5 @@ function runClient (config, queryString, content_el) {
         };
 
     });
-
-
-
 
 };

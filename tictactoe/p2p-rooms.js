@@ -1,4 +1,4 @@
-import {joinRoom, selfId} from '../trystero-torrent.min.js';
+import {joinRoom, selfId} from '../trystero-torrent.js';
 
 /**
  * TODO:
@@ -36,7 +36,7 @@ import {joinRoom, selfId} from '../trystero-torrent.min.js';
  */
 
 /**
- * Information about the room a player is in
+ * Room a player is in
  * @typedef {Object} GameRoom
  * @property {Function} makeAction - creates 3-array of actions - send, get, onProgress
  * @property {Function} leave - leaves the room
