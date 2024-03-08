@@ -1,6 +1,6 @@
 // Adapted from https://github.com/arasgungore/Tic-Tac-Toe
 
-import {selfId} from '../trystero-torrent.js';
+import {selfId} from '../lib/trystero-torrent.js';
 import {Player} from "./p2p-rooms.js";
 import {HTMLTempls} from "./html_templates.js";
 

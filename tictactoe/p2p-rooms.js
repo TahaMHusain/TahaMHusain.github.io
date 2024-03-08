@@ -1,4 +1,4 @@
-import {joinRoom, selfId} from '../trystero-torrent.js';
+import {joinRoom, selfId} from '../lib/trystero-torrent.js';
 
 /**
  * TODO:
@@ -39,6 +39,7 @@ import {joinRoom, selfId} from '../trystero-torrent.js';
  * Room a player is in
  * @typedef {Object} GameRoom
  * @property {Function} makeAction - creates 3-array of actions - send, get, onProgress
+ * @property {Function} ping - returns time in ms for message to given peer
  * @property {Function} leave - leaves the room
  * @property {Function} getPeers - return object of peers in room (keys are peerIds)
  * @property {Function} onPeerJoin - callback for peer joining room
@@ -161,12 +162,12 @@ async function waitForCurPage () {
     });
 };
 
-function setClientActions (player, room) {
+function setClientActions (room) {
     const getMasterDict = room.makeAction("MPD")[1];
     // Listen for the host sending updates to masterPeerDict
     getMasterDict(m => {
         console.log("received MasterPeerDict in MPD action! " + m);
-        this.masterPeerDict = m;
+        room.playerList = m;
     });
 
     const getPromoteRequest = room.makeAction("promote")[1];
