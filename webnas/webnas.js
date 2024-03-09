@@ -57,13 +57,13 @@ async function main () {
     });
 
     const fileInput = document.getElementById("fileInput");
-    fileInput.onchange = evt => {
+    fileInput.onchange = async (evt) => {
         const file = fileInput.files[0];
         console.log("Adding file: " + file.name);
         myFiles.push(file);
         console.log("myFiles contents: " + myFiles);
         console.log("Sending file " + file.name);
-        sendFile(file, null, {name: file.name, type: "file", path: file.webkitRelativePath});
+        sendFile(Blob.arrayBuffer(file), null, {name: file.name, type: "file", path: file.webkitRelativePath});
         fileListDisplay.innerHTML += `
             <li> <a href="${window.URL.createObjectURL(file)}" download="${file.name}">${file.name} </a> </li>
         `
@@ -76,7 +76,7 @@ async function main () {
         console.log("Received ready");
         for (var i = 0; i < myFiles.length; i++) {
             console.log("Sending file " + myFiles[i].name + " to peer id: " + peerId);
-            sendFile(myFiles[i], peerId, {name: myFiles[i].name, type: "file", path: myFiles[i].webkitRelativePath});
+            sendFile(Blob.arrayBuffer(myFiles[i]), peerId, {name: myFiles[i].name, type: "file", path: myFiles[i].webkitRelativePath});
         };
     });
 
