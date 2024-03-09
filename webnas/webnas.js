@@ -49,9 +49,10 @@ async function main () {
         console.log(
             `got a file (${metadata.name}) from ${peerId} with type ${metadata.type}`,
         );
-        myFiles.push(new File([data], metadata.name));
+        const file = new File([data], metadata.name);
+        myFiles.push(file);
         fileListDisplay.innerHTML += `
-            <li> <a href="${metadata.path}" download="${metadata.name}">${metadata.name} </button> </li>
+            <li> <a href="${window.URL.createObjectURL(file)}" download="${metadata.name}">${metadata.name} </a> </li>
         `
     });
 
@@ -63,7 +64,7 @@ async function main () {
         console.log("myFiles contents: " + myFiles)
         sendFile(file, null, {name: file.name, type: "file", path: file.webkitRelativePath});
         fileListDisplay.innerHTML += `
-            <li> <a href="${file.webkitRelativePath}" download="${file.name}">${file.name} </button> </li>
+            <li> <a href="${window.URL.createObjectURL(file)}" download="${file.name}">${file.name} </a> </li>
         `
     };    
 
