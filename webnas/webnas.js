@@ -63,7 +63,8 @@ async function main () {
         myFiles.push(file);
         console.log("myFiles contents: " + myFiles);
         console.log("Sending file " + file.name);
-        sendFile(file.arrayBuffer(), null, {name: file.name, type: "file", path: file.webkitRelativePath});
+        const buffer = await file.arrayBuffer();
+        sendFile(buffer, null, {name: file.name, type: "file", path: file.webkitRelativePath});
         fileListDisplay.innerHTML += `
             <li> <a href="${window.URL.createObjectURL(file)}" download="${file.name}">${file.name} </a> </li>
         `
@@ -72,11 +73,12 @@ async function main () {
     const [sendReady, getReady] = room.makeAction("ready");
     console.log("sending ready...");
     sendReady("ready");
-    getReady((data, peerId) => {
+    getReady(async (data, peerId) => {
         console.log("Received ready");
         for (var i = 0; i < myFiles.length; i++) {
             console.log("Sending file " + myFiles[i].name + " to peer id: " + peerId);
-            sendFile(myFiles[i].arrayBuffer(), peerId, {name: myFiles[i].name, type: "file", path: myFiles[i].webkitRelativePath});
+            const buffer = await myFiles[i].arrayBuffer();
+            sendFile(buffer, peerId, {name: myFiles[i].name, type: "file", path: myFiles[i].webkitRelativePath});
         };
     });
 
