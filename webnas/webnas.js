@@ -61,13 +61,8 @@ async function main () {
         const file = fileInput.files[0];
         console.log("Adding file: " + file.name);
         myFiles.push(file);
-        console.log("Pre-contents 1");
-        console.log("Pre-contents 2");
-        console.log("Pre-contents 3");
         console.log("myFiles contents: " + myFiles);
         console.log("Sending file " + file.name);
-        console.log("Sending file 2");
-        console.log("Sending file 3")
         sendFile(file, null, {name: file.name, type: "file", path: file.webkitRelativePath});
         fileListDisplay.innerHTML += `
             <li> <a href="${window.URL.createObjectURL(file)}" download="${file.name}">${file.name} </a> </li>
