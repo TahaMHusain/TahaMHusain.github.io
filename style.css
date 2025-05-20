@@ -205,3 +205,45 @@ section {
   box-shadow: 2px 2px 2px 2px #d86c23;
   border: 2px solid #d86c23;
 }
+
+.wiki-link-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 500px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease;
+}
+
+.wiki-link-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.wiki-link-card img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.wiki-content {
+  flex: 1;
+}
+
+.wiki-content h2 {
+  margin: 0 0 8px;
+  font-size: 1.2em;
+}
+
+.wiki-content p {
+  margin: 0;
+  font-size: 0.95em;
+  color: #444;
+}
